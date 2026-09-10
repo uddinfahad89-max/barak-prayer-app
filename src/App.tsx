@@ -261,6 +261,7 @@ export default function App() {
 
             {/* Fasting & Iftar Duas */}
             <FastingDuaCard /> 
+            
             {/* Timetable Calendar Table (with CSV & Print) */}
             <TimetableTable
               timetable={timetable}
