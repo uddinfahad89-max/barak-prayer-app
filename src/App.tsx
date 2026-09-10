@@ -260,7 +260,22 @@ export default function App() {
             />
 
             {/* Fasting & Iftar Duas */}
-            <FastingDuaCard />
+            <FastingDuaCard /> 
+            
+<div style={{ marginTop: '10px', textAlign: 'center' }}>
+  <button 
+    onClick={handleGetLocation}
+    style={{ padding: '8px 16px', borderRadius: '5px', cursor: 'pointer', backgroundColor: '#0070f3', color: '#fff', border: 'none' }}
+  >
+    {loadingLocation ? 'লোকেশন খোঁজা হচ্ছে...' : '📍 বর্তমান লোকেশন দেখুন'}
+  </button>
+
+  {location && (
+    <p style={{ marginTop: '8px', color: '#0070f3' }}>
+      আপনার লোকেশন: {location}
+    </p>
+  )}
+</div>
 
             {/* Timetable Calendar Table (with CSV & Print) */}
             <TimetableTable
