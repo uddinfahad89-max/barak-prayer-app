@@ -298,29 +298,4 @@ export default function App() {
       />
     </div>
   );
-}const [location, setLocation] = useState<string>('');
-const [loadingLocation, setLoadingLocation] = useState<boolean>(false);
-
-// লোকেশন নেয়ার ফাংশন
-const handleGetLocation = () => {
-  if (!navigator.geolocation) {
-    alert("আপনার ব্রাউজারে লোকেশন সাপোর্ট করে না");
-    return;
-  }
-
-  setLoadingLocation(true);
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      setLocation(`অক্ষাংশ: ${lat.toFixed(4)}, দ্রাঘিমাংশ: ${lng.toFixed(4)}`);
-      setLoadingLocation(false);
-    },
-    (error) => {
-      alert("লোকেশন পারমিশন অন করুন বা GPS চালুই করুন।");
-      setLoadingLocation(false);
-    }
-  );
-};
-
+}
