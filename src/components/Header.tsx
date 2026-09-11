@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon } from 'lucide-react';
+import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon, Smartphone } from 'lucide-react';
 import { LocationMeta } from '../types';
 import { playPrayerChime } from '../utils/audioAlert';
 import { calculateHijriFromDate, toBengaliNumerals } from '../utils/hijriCalendar';
@@ -28,6 +28,7 @@ interface HeaderProps {
   onOpenMosqueSettings?: () => void;
   hijriAdjustment?: number;
   onOpenArabicCalendar?: () => void;
+  onOpenInstallHelp?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -54,6 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMosqueSettings,
   hijriAdjustment = 0,
   onOpenArabicCalendar,
+  onOpenInstallHelp,
 }) => {
   const [districtFilter, setDistrictFilter] = useState<'all' | 'Cachar' | 'Hailakandi' | 'Karimganj'>('all');
 
@@ -188,6 +190,19 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <Building2 className="w-3.5 h-3.5 text-amber-300" />
               <span>{mosqueName ? `🕌 ${mosqueName}` : '🕌 জামাত সময়'}</span>
+            </button>
+          )}
+
+          {/* Install / Security Help Guide */}
+          {onOpenInstallHelp && (
+            <button
+              id="open-install-help-btn"
+              onClick={onOpenInstallHelp}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-800/90 hover:bg-emerald-700 border border-emerald-600/50 text-xs font-medium text-emerald-100 hover:text-white transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+              title="অ্যাপ ফোনে ইনস্টল ও সিকিউরিটি নির্দেশিকা"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-amber-300" />
+              <span>ইনস্টল গাইড</span>
             </button>
           )}
 

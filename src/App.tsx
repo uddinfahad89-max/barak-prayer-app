@@ -25,7 +25,8 @@ import { DataEditorModal } from './components/DataEditorModal';
 import { CalendarPosterView } from './components/CalendarPosterView';
 import { MosqueSettingsModal } from './components/MosqueSettingsModal';
 import { ArabicCalendarView } from './components/ArabicCalendarView';
-import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon } from 'lucide-react';
+import { InstallHelpModal } from './components/InstallHelpModal';
+import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck, Smartphone } from 'lucide-react';
 
 export default function App() {
   // State for user data
@@ -40,7 +41,31 @@ export default function App() {
   const [asrMethod, setAsrMethod] = useState<'hanafi' | 'shafii'>('hanafi');
   const [isDataModalOpen, setIsDataModalOpen] = useState<boolean>(false);
   const [isMosqueModalOpen, setIsMosqueModalOpen] = useState<boolean>(false);
+  const [isInstallHelpOpen, setIsInstallHelpOpen] = useState<boolean>(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'daily' | 'arabic' | 'poster' | 'all'>('daily');
+
+  // PWA Install prompt listener
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    }
+  };
 
   // হিজরি / আরবী ক্যালেন্ডার চাঁদ দেখার সামঞ্জস্য
   const [hijriAdjustment, setHijriAdjustment] = useState<number>(() => {
@@ -374,6 +399,7 @@ export default function App() {
         onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
         hijriAdjustment={hijriAdjustment}
         onOpenArabicCalendar={() => setActiveTab('arabic')}
+        onOpenInstallHelp={() => setIsInstallHelpOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -434,11 +460,23 @@ export default function App() {
             </button>
           </div>
 
-          <div className="text-xs text-stone-500 hidden sm:flex items-center gap-2">
-            <span>Location:</span>
-            <span className="font-semibold text-stone-800 bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200">
-              {activeLocation.name} ({activeLocation.offset >= 0 ? `+${activeLocation.offset}` : activeLocation.offset} min)
-            </span>
+          <div className="flex items-center gap-2">
+            <button
+              id="install-guide-tab-btn"
+              onClick={() => setIsInstallHelpOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer"
+              title="ফোনে নিরাপদ ডাউনলোড ও ইনস্টল সহায়িকা"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span>ইনস্টল ও নিরাপত্তা</span>
+            </button>
+
+            <div className="text-xs text-stone-500 hidden sm:flex items-center gap-2">
+              <span>Location:</span>
+              <span className="font-semibold text-stone-800 bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200">
+                {activeLocation.name} ({activeLocation.offset >= 0 ? `+${activeLocation.offset}` : activeLocation.offset} min)
+              </span>
+            </div>
           </div>
         </div>
 
@@ -595,6 +633,14 @@ export default function App() {
         jamaatTimes={jamaatTimes}
         onSave={saveMosqueSettings}
         currentPrayers={prayers}
+      />
+
+      {/* Install & Security Help Modal */}
+      <InstallHelpModal
+        isOpen={isInstallHelpOpen}
+        onClose={() => setIsInstallHelpOpen(false)}
+        onInstallPwa={handleInstallPwa}
+        canInstallPwa={!!deferredPrompt}
       />
     </div>
   );
