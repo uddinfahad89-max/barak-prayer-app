@@ -1,15 +1,20 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   DEFAULT_LOCATION_OFFSETS,
   DEFAULT_TIMETABLE,
   LOCATION_DETAILS,
 } from './data/defaultData';
-import { LocationOffsets, TimetableData, LocationMeta } from './types';
+import { LocationOffsets, TimetableData, LocationMeta, JamaatTimes } from './types';
 import {
   getBasePrayerTimesForDate,
   computeDayPrayerTimes,
   formatDateKey,
 } from './utils/prayerCalc';
+import {
+  findClosestConstituency,
+  matchConstituencyByAddressText,
+} from './utils/geoDetect';
+import { playPrayerChime } from './utils/audioAlert';
 import { Header } from './components/Header';
 import { CurrentPrayerCard } from './components/CurrentPrayerCard';
 import { DailyPrayerGrid } from './components/DailyPrayerGrid';
@@ -18,7 +23,9 @@ import { TimetableTable } from './components/TimetableTable';
 import { FastingDuaCard } from './components/FastingDuaCard';
 import { DataEditorModal } from './components/DataEditorModal';
 import { CalendarPosterView } from './components/CalendarPosterView';
-import { Clock, FileText, Calendar as CalendarIcon, Sparkles } from 'lucide-react';
+import { MosqueSettingsModal } from './components/MosqueSettingsModal';
+import { ArabicCalendarView } from './components/ArabicCalendarView';
+import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon } from 'lucide-react';
 
 export default function App() {
   // State for user data
@@ -32,7 +39,205 @@ export default function App() {
   const [use24Hour, setUse24Hour] = useState<boolean>(false);
   const [asrMethod, setAsrMethod] = useState<'hanafi' | 'shafii'>('hanafi');
   const [isDataModalOpen, setIsDataModalOpen] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'daily' | 'poster' | 'all'>('daily');
+  const [isMosqueModalOpen, setIsMosqueModalOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'daily' | 'arabic' | 'poster' | 'all'>('daily');
+
+  // হিজরি / আরবী ক্যালেন্ডার চাঁদ দেখার সামঞ্জস্য
+  const [hijriAdjustment, setHijriAdjustment] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('hijriAdjustment');
+      return saved !== null ? parseInt(saved, 10) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const handleHijriAdjustmentChange = (adj: number) => {
+    setHijriAdjustment(adj);
+    try {
+      localStorage.setItem('hijriAdjustment', adj.toString());
+    } catch {
+      // ignore
+    }
+  };
+
+  // ইউজারের শহরের নাম ও GPS স্টোর করার জন্য স্টেট
+  const [userCity, setUserCity] = useState<string>('');
+  const [isDetectingLocation, setIsDetectingLocation] = useState<boolean>(false);
+  const [locationStatusMsg, setLocationStatusMsg] = useState<string>('');
+
+  // মসজিদের তথ্য ও অ্যালার্মের স্টেট
+  const [mosqueName, setMosqueName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('mosqueName') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const [jamaatTimes, setJamaatTimes] = useState<{ [key: string]: string }>(() => {
+    try {
+      const saved = localStorage.getItem('jamaatTimes');
+      return saved ? JSON.parse(saved) : { Fajr: '', Dhuhr: '', Asr: '', Maghrib: '', Isha: '' };
+    } catch {
+      return { Fajr: '', Dhuhr: '', Asr: '', Maghrib: '', Isha: '' };
+    }
+  });
+
+  const lastNotifiedMinuteRef = useRef<string>('');
+
+  // তথ্য সেভ করার ফাংশন
+  const saveMosqueSettings = (name: string, times: any) => {
+    setMosqueName(name);
+    setJamaatTimes(times);
+    try {
+      localStorage.setItem('mosqueName', name);
+      localStorage.setItem('jamaatTimes', JSON.stringify(times));
+    } catch (err) {
+      console.warn('Storage save warning:', err);
+    }
+
+    try {
+      alert('মসজিদ ও জামাতের সময় সফলভাবে সেভ হয়েছে!');
+    } catch {
+      // In case alert is restricted in iframe sandbox
+    }
+
+    // নোটিফিকেশনের পারমিশন নেওয়া
+    if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  };
+
+  // সময় চেক করে অ্যালার্ম/নোটিফিকেশন দেওয়ার ইফেক্ট
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const currentTime = now.toTimeString().slice(0, 5); // HH:MM ফরম্যাট
+
+      Object.entries(jamaatTimes).forEach(([prayer, time]) => {
+        if (time && time === currentTime) {
+          const alertKey = `${prayer}_${currentTime}`;
+          if (lastNotifiedMinuteRef.current !== alertKey) {
+            lastNotifiedMinuteRef.current = alertKey;
+            playPrayerChime();
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              new Notification(`🕌 ${mosqueName || 'মসজিদ'} - জামাতের সময়!`, {
+                body: `${prayer} নামাজের জামাতের সময় হয়ে গেছে।`,
+                icon: '/icon.png',
+              });
+            }
+          }
+        }
+      });
+    }, 30000); // প্রতি ৩০ সেকেন্ড পর পর চেক করবে
+
+    return () => clearInterval(interval);
+  }, [jamaatTimes, mosqueName]);
+
+  // আইপি ভিত্তিক ফলব্যাক লোকেশন ফাংশন
+  const tryIpFallback = async () => {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      if (res.ok) {
+        const data = await res.json();
+        const city = data.city || data.region || 'আপনার অঞ্চল';
+        setUserCity(city);
+        if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+          const { constituency, distanceKm } = findClosestConstituency(data.latitude, data.longitude);
+          if (distanceKm <= 80) {
+            setSelectedLocationId(constituency.id);
+            setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (${constituency.nameBn} বিধানসভা)`);
+            return;
+          }
+        }
+        setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (শিলচর বেস সময়)`);
+        return;
+      }
+    } catch {
+      // Network or CORS issue, handled gracefully
+    }
+    setLocationStatusMsg('লোকেশন পাওয়া যায়নি। তালিকা থেকে আপনার বিধানসভা বেছে নিন।');
+  };
+
+  // কারেন্ট লোকেশনের নাম বের করার ফাংশন
+  const detectUserLocation = () => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      setIsDetectingLocation(true);
+      setLocationStatusMsg('জিপিএস লোকেশন সনাক্ত করা হচ্ছে...');
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            if (res.ok) {
+              const data = await res.json();
+              const address = data.address || {};
+              const city =
+                address.city ||
+                address.town ||
+                address.village ||
+                address.suburb ||
+                address.county ||
+                address.state_district ||
+                'আপনার স্থান';
+              setUserCity(city);
+
+              // Find matching or closest constituency in Barak Valley
+              const textMatch = matchConstituencyByAddressText(address);
+              if (textMatch) {
+                setSelectedLocationId(textMatch.id);
+                setLocationStatusMsg(`শনাক্তকৃত: ${city} (${textMatch.nameBn} বিধানসভা নির্বাচন করা হয়েছে)`);
+                return;
+              }
+            }
+
+            // Fallback to coordinate math
+            const { constituency, distanceKm } = findClosestConstituency(latitude, longitude);
+            setUserCity(constituency.nameBn);
+            if (distanceKm <= 60) {
+              setSelectedLocationId(constituency.id);
+              setLocationStatusMsg(
+                `সনাক্তকৃত নিকটবর্তী বিধানসভা: ${constituency.nameBn} (দূরত্ব ~${distanceKm} কিমি)`
+              );
+            } else {
+              setLocationStatusMsg(`সনাক্তকৃত স্থান (শিলচর বেস অথবা কাস্টম অফসেট প্রযোজ্য)`);
+            }
+          } catch {
+            // Reverse geocode failed, directly use coordinates
+            const { constituency } = findClosestConstituency(latitude, longitude);
+            setUserCity(constituency.nameBn);
+            setSelectedLocationId(constituency.id);
+            setLocationStatusMsg(`শনাক্তকৃত বিধানসভা: ${constituency.nameBn}`);
+          } finally {
+            setIsDetectingLocation(false);
+          }
+        },
+        async (error) => {
+          setIsDetectingLocation(false);
+          // Handle GPS denial or unavailability gracefully without throwing console.error
+          if (error && error.code === 1) {
+            // PERMISSION_DENIED
+            setLocationStatusMsg('লোকেশন পারমিশন মেলেনি। তালিকা থেকে আপনার বিধানসভা নির্বাচন করুন।');
+          } else {
+            // POSITION_UNAVAILABLE or TIMEOUT - try IP fallback
+            await tryIpFallback();
+          }
+        },
+        { timeout: 8000, enableHighAccuracy: false, maximumAge: 300000 }
+      );
+    } else {
+      setIsDetectingLocation(false);
+      tryIpFallback();
+    }
+  };
+
+  const handleClearDetectedLocation = () => {
+    setUserCity('');
+    setLocationStatusMsg('');
+  };
 
   // Current live clock state
   const [now, setNow] = useState<Date>(() => new Date());
@@ -160,6 +365,15 @@ export default function App() {
         selectedDate={selectedDate}
         onSelectDate={setSelectedDate}
         hasUserOverrideForDate={hasUserOverride}
+        userCity={userCity}
+        isDetectingLocation={isDetectingLocation}
+        locationStatusMsg={locationStatusMsg}
+        onDetectLocation={detectUserLocation}
+        onClearDetectedLocation={handleClearDetectedLocation}
+        mosqueName={mosqueName}
+        onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
+        hijriAdjustment={hijriAdjustment}
+        onOpenArabicCalendar={() => setActiveTab('arabic')}
       />
 
       {/* Main Content Area */}
@@ -178,6 +392,19 @@ export default function App() {
             >
               <Clock className="w-3.5 h-3.5" />
               <span>Daily Times &amp; Overview</span>
+            </button>
+
+            <button
+              id="view-tab-arabic"
+              onClick={() => setActiveTab('arabic')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'arabic'
+                  ? 'bg-emerald-800 text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+              }`}
+            >
+              <Moon className="w-3.5 h-3.5 text-amber-400" />
+              <span>Arabic Calendar (আরবী ক্যালেন্ডার)</span>
             </button>
 
             <button
@@ -215,6 +442,18 @@ export default function App() {
           </div>
         </div>
 
+        {/* View Mode: Arabic / Hijri Calendar */}
+        {(activeTab === 'arabic' || activeTab === 'all') && (
+          <ArabicCalendarView
+            selectedDate={selectedDate}
+            onSelectDate={(newDate) => {
+              setSelectedDate(newDate);
+            }}
+            hijriAdjustment={hijriAdjustment}
+            onAdjustmentChange={handleHijriAdjustmentChange}
+          />
+        )}
+
         {/* View Mode: Authentic Printed Calendar Poster */}
         {(activeTab === 'poster' || activeTab === 'all') && (
           <CalendarPosterView
@@ -241,6 +480,10 @@ export default function App() {
               minutesToNext={minutesToNext}
               use24Hour={use24Hour}
               hasUserOverride={hasUserOverride}
+              userCity={userCity}
+              mosqueName={mosqueName}
+              hijriAdjustment={hijriAdjustment}
+              onOpenArabicCalendar={() => setActiveTab('arabic')}
             />
 
             {/* 6 Prayer Cards for the Day */}
@@ -248,7 +491,54 @@ export default function App() {
               prayers={prayers}
               selectedLocation={activeLocation}
               use24Hour={use24Hour}
+              jamaatTimes={jamaatTimes}
+              mosqueName={mosqueName}
+              onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
             />
+
+            {/* আমার মসজিদ সেটিং করার ফর্ম/বাটন */}
+            <div className="mt-4 p-5 bg-stone-800 rounded-xl text-white border border-stone-700 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <span>🕌 আপনার মসজিদের জামাত সেটিং</span>
+                  {mosqueName && (
+                    <span className="text-xs font-normal text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
+                      সক্রিয়: {mosqueName}
+                    </span>
+                  )}
+                </h3>
+                <p className="text-xs text-stone-400">প্রতিটি ওয়াক্তের জামাত সময় সেট করে রাখুন</p>
+              </div>
+              
+              <input 
+                type="text" 
+                placeholder="মসজিদের নাম লিখুন" 
+                value={mosqueName} 
+                onChange={(e) => setMosqueName(e.target.value)}
+                className="p-2.5 rounded-lg bg-stone-700 w-full mb-3 text-white border border-stone-600 focus:border-emerald-500 focus:outline-none text-sm placeholder-stone-400"
+              />
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
+                {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayer) => (
+                  <div key={prayer} className="flex flex-col bg-stone-900/50 p-2.5 rounded-lg border border-stone-700/80">
+                    <label className="text-xs font-semibold text-stone-300 mb-1">{prayer} জামাত:</label>
+                    <input 
+                      type="time" 
+                      value={jamaatTimes[prayer] || ''} 
+                      onChange={(e) => setJamaatTimes({...jamaatTimes, [prayer]: e.target.value})}
+                      className="p-1.5 rounded bg-stone-700 text-white font-mono text-sm border border-stone-600 focus:border-emerald-500 focus:outline-none w-full"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => saveMosqueSettings(mosqueName, jamaatTimes)}
+                className="mt-4 bg-emerald-600 px-4 py-2.5 rounded-lg text-white font-semibold hover:bg-emerald-500 transition-colors w-full cursor-pointer shadow-sm text-sm flex items-center justify-center gap-2"
+              >
+                <span>💾 সেভ করুন ও অ্যালার্ম চালু করুন</span>
+              </button>
+            </div>
 
             {/* Regional Location Comparison Matrix */}
             <LocationComparison
@@ -295,6 +585,16 @@ export default function App() {
         timetable={timetable}
         onSave={handleSaveJson}
         onReset={handleResetJson}
+      />
+
+      {/* Mosque & Jamaat Settings Modal */}
+      <MosqueSettingsModal
+        isOpen={isMosqueModalOpen}
+        onClose={() => setIsMosqueModalOpen(false)}
+        mosqueName={mosqueName}
+        jamaatTimes={jamaatTimes}
+        onSave={saveMosqueSettings}
+        currentPrayers={prayers}
       />
     </div>
   );

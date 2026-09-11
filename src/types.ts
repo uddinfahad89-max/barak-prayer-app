@@ -38,6 +38,15 @@ export interface DistrictItem {
   constituencies: ConstituencyItem[];
 }
 
+export interface JamaatTimes {
+  Fajr: string;
+  Dhuhr: string;
+  Asr: string;
+  Maghrib: string;
+  Isha: string;
+  [key: string]: string;
+}
+
 export interface PrayerDisplayInfo {
   key: PrayerKey;
   label: string;

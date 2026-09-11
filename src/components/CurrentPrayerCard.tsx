@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Moon, Sun, Sparkles, MapPin, CheckCircle2 } from 'lucide-react';
 import { PrayerDisplayInfo, LocationMeta } from '../types';
+import { calculateHijriFromDate } from '../utils/hijriCalendar';
 
 interface CurrentPrayerCardProps {
   selectedLocation: LocationMeta;
@@ -14,6 +15,10 @@ interface CurrentPrayerCardProps {
   minutesToNext: number;
   use24Hour: boolean;
   hasUserOverride: boolean;
+  userCity?: string;
+  mosqueName?: string;
+  hijriAdjustment?: number;
+  onOpenArabicCalendar?: () => void;
 }
 
 export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
@@ -28,7 +33,12 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
   minutesToNext,
   use24Hour,
   hasUserOverride,
+  userCity,
+  mosqueName,
+  hijriAdjustment = 0,
+  onOpenArabicCalendar,
 }) => {
+  const hijriDate = calculateHijriFromDate(selectedDate, hijriAdjustment);
   const sehriEnd = prayers.find((p) => p.key === 'sehri_end');
   const maghrib = prayers.find((p) => p.key === 'maghrib');
 
@@ -55,6 +65,11 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
 
   const dateInputValue = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
 
+  // আজকের সঠিক ইংরেজি তারিখ (দিন-মাস) যেমন: 11-09
+  const day = String(selectedDate.getDate()).padStart(2, '0');
+  const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+  const todayFormattedDate = `${day}-${month}`;
+
   const offsetLabel =
     selectedLocation.offset === 0
       ? 'Silchar Baseline (0 min)'
@@ -75,58 +90,89 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
       {/* Location and Date Navigation Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-emerald-800/60 pb-5">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="p-1 rounded bg-amber-500/20 text-amber-400">
               <MapPin className="w-4 h-4" />
             </span>
+            {/* Silchar-এর জায়গায় ডায়নামিক লোকেশন নাম */}
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              {selectedLocation.name}
+              📍 {userCity ? userCity : 'Silchar'}
+              {selectedLocation.name && selectedLocation.name !== 'Silchar' && (
+                <span className="text-sm font-normal text-emerald-300">({selectedLocation.name})</span>
+              )}
               <span className="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-800 text-amber-300 border border-emerald-700">
                 {offsetLabel}
               </span>
             </h2>
           </div>
+
+          {/* ইউজারের সেভ করা মসজিদের নাম থাকলে দেখাবে */}
+          {mosqueName && <p className="text-sm text-green-400 font-medium mt-1 flex items-center gap-1.5">🕌 {mosqueName}</p>}
+
           <p className="text-xs text-emerald-300/80 mt-1">
             {selectedLocation.district ? `${selectedLocation.district} District, ` : ''}
             {selectedLocation.state} • {selectedLocation.description || 'Barak Valley Region'}
           </p>
         </div>
 
-        {/* Date Selector with Previous/Next Arrows */}
-        <div className="flex items-center gap-2 bg-emerald-950/80 p-1 rounded-xl border border-emerald-800/80">
-          <button
-            id="prev-day-btn"
-            onClick={onPrevDay}
-            className="p-1.5 rounded-lg hover:bg-emerald-800 text-emerald-200 hover:text-white transition-colors"
-            title="Previous Day"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+        {/* Date Selector with Previous/Next Arrows & Hijri Date */}
+        <div className="flex flex-col sm:items-end gap-2">
+          <div className="flex items-center gap-2 bg-emerald-950/80 p-1 rounded-xl border border-emerald-800/80 shadow-xs">
+            <button
+              id="prev-day-btn"
+              onClick={onPrevDay}
+              className="p-1.5 rounded-lg hover:bg-emerald-800 text-emerald-200 hover:text-white transition-colors"
+              title="Previous Day"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          <div className="flex items-center gap-1.5 px-2">
-            <Calendar className="w-3.5 h-3.5 text-amber-400" />
-            <input
-              id="selected-date-picker"
-              type="date"
-              value={dateInputValue}
-              onChange={(e) => {
-                if (e.target.value) {
-                  const parts = e.target.value.split('-');
-                  const newD = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-                  onDateChange(newD);
-                }
-              }}
-              className="bg-transparent text-xs font-medium text-white focus:outline-none cursor-pointer"
-            />
+            <div className="flex items-center gap-1.5 px-2">
+              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+              <input
+                id="selected-date-picker"
+                type="date"
+                value={dateInputValue}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const parts = e.target.value.split('-');
+                    const newD = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                    onDateChange(newD);
+                  }
+                }}
+                className="bg-transparent text-xs font-medium text-white focus:outline-none cursor-pointer"
+              />
+            </div>
+
+            <button
+              id="next-day-btn"
+              onClick={onNextDay}
+              className="p-1.5 rounded-lg hover:bg-emerald-800 text-emerald-200 hover:text-white transition-colors"
+              title="Next Day"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
+          {/* Hijri (Arabic) Date Badge */}
           <button
-            id="next-day-btn"
-            onClick={onNextDay}
-            className="p-1.5 rounded-lg hover:bg-emerald-800 text-emerald-200 hover:text-white transition-colors"
-            title="Next Day"
+            onClick={onOpenArabicCalendar}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/60 text-xs text-amber-300 font-medium transition-colors cursor-pointer group shadow-xs"
+            title="আরবী ক্যালেন্ডার দেখুন"
           >
-            <ChevronRight className="w-4 h-4" />
+            <Moon className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform shrink-0" />
+            <span className="font-semibold">{hijriDate.formattedBn}</span>
+            <span className="text-[10px] text-emerald-300 font-mono bg-emerald-900/60 px-1.5 py-0.5 rounded border border-emerald-700/40">
+              {todayFormattedDate}
+            </span>
+            <span className="text-[11px] text-emerald-300 font-serif opacity-90 hidden md:inline" dir="rtl">
+              ({hijriDate.formattedAr})
+            </span>
+            {hijriDate.specialEvent && (
+              <span className="text-[10px] bg-rose-600/90 text-white px-1.5 py-0.2 rounded font-bold ml-1">
+                {hijriDate.specialEvent}
+              </span>
+            )}
           </button>
         </div>
       </div>

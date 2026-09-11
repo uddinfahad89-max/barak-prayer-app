@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded edges -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <!-- Crescent Moon and Star -->
+  <path d="M280,90 A80,80 0 1,0 360,170 A100,100 0 1,1 280,90 Z" fill="url(#gold)" opacity="0.9" />
+  <!-- Mosque Dome -->
+  <path d="M256,150 C220,200 170,230 170,290 L342,290 C342,230 292,200 256,150 Z" fill="url(#gold)" />
+  <circle cx="256" cy="140" r="8" fill="url(#gold)" />
+  <!-- Main Mosque Building Structure -->
+  <rect x="170" y="290" width="172" height="130" fill="#ecfdf5" rx="6" />
+  <!-- Center Arch Doorway -->
+  <path d="M226,420 L226,340 C226,325 286,325 286,340 L286,420 Z" fill="#064e3b" />
+  <!-- Left & Right Windows -->
+  <path d="M190,380 L190,335 C190,325 212,325 212,335 L212,380 Z" fill="#064e3b" opacity="0.75" />
+  <path d="M300,380 L300,335 C300,325 322,325 322,335 L322,380 Z" fill="#064e3b" opacity="0.75" />
+  <!-- Left Minaret -->
+  <rect x="120" y="230" width="28" height="190" fill="#ecfdf5" rx="4" />
+  <path d="M116,230 L152,230 L134,180 Z" fill="url(#gold)" />
+  <!-- Right Minaret -->
+  <rect x="364" y="230" width="28" height="190" fill="#ecfdf5" rx="4" />
+  <path d="M360,230 L396,230 L378,180 Z" fill="url(#gold)" />
+</svg>

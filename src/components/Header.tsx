@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, ChevronDown } from 'lucide-react';
+import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon } from 'lucide-react';
 import { LocationMeta } from '../types';
 import { playPrayerChime } from '../utils/audioAlert';
+import { calculateHijriFromDate, toBengaliNumerals } from '../utils/hijriCalendar';
 
 interface HeaderProps {
   locations: LocationMeta[];
@@ -18,6 +19,15 @@ interface HeaderProps {
   selectedDate: Date;
   onSelectDate: (date: Date) => void;
   hasUserOverrideForDate: boolean;
+  userCity: string;
+  isDetectingLocation: boolean;
+  locationStatusMsg: string;
+  onDetectLocation: () => void;
+  onClearDetectedLocation: () => void;
+  mosqueName?: string;
+  onOpenMosqueSettings?: () => void;
+  hijriAdjustment?: number;
+  onOpenArabicCalendar?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,10 +45,39 @@ export const Header: React.FC<HeaderProps> = ({
   selectedDate,
   onSelectDate,
   hasUserOverrideForDate,
+  userCity,
+  isDetectingLocation,
+  locationStatusMsg,
+  onDetectLocation,
+  onClearDetectedLocation,
+  mosqueName,
+  onOpenMosqueSettings,
+  hijriAdjustment = 0,
+  onOpenArabicCalendar,
 }) => {
   const [districtFilter, setDistrictFilter] = useState<'all' | 'Cachar' | 'Hailakandi' | 'Karimganj'>('all');
 
   const selectedLoc = locations.find((l) => l.id === selectedLocationId) || locations[0];
+  const hijriDate = calculateHijriFromDate(selectedDate, hijriAdjustment);
+
+  // আজকের সঠিক ইংরেজি তারিখ (দিন-মাস)
+  const today = new Date();
+  const day = String(today.getDate()).padStart(2, '0');
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const todayFormattedDate = `${day}-${month}`; // যেমন: 11-09
+
+  // সঠিক হিজরি (আরবি) তারিখ পাওয়ার নিয়ম
+  let dynamicHijriDate = '';
+  try {
+    const hijriFormatter = new Intl.DateTimeFormat('bn-BD-u-ca-islamic-umalqura', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+    dynamicHijriDate = hijriFormatter.format(today); // যেমন: ২৯ রবিউল আউয়াল ১৪৪৮ হিজরী
+  } catch {
+    dynamicHijriDate = `${toBengaliNumerals(hijriDate.day)} ${hijriDate.monthNameBn} ${toBengaliNumerals(hijriDate.year)} হিজরী`;
+  }
 
   const filteredLocations = locations.filter((loc) => {
     if (districtFilter === 'all') return true;
@@ -107,6 +146,51 @@ export const Header: React.FC<HeaderProps> = ({
             <Volume2 className="w-4 h-4" />
           </button>
 
+          {/* GPS Location Auto-Detection Button */}
+          <button
+            id="detect-gps-btn"
+            onClick={onDetectLocation}
+            disabled={isDetectingLocation}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-xs cursor-pointer ${
+              userCity
+                ? 'bg-amber-400 text-emerald-950 border-amber-300 font-semibold shadow-amber-950/20'
+                : 'bg-emerald-900 hover:bg-emerald-800 border-emerald-700/50 text-emerald-200 hover:text-white'
+            }`}
+            title="GPS দিয়ে আপনার শহরের নাম ও স্থানীয় সময় সনাক্ত করুন"
+          >
+            {isDetectingLocation ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
+            ) : (
+              <LocateFixed className={`w-3.5 h-3.5 ${userCity ? 'text-emerald-950' : 'text-amber-300'}`} />
+            )}
+            <span>{isDetectingLocation ? 'শনাক্ত হচ্ছে...' : userCity ? `📍 ${userCity}` : 'GPS লোকেশন'}</span>
+          </button>
+
+          {/* Arabic / Hijri Calendar Button */}
+          {onOpenArabicCalendar && (
+            <button
+              id="open-arabic-calendar-header-btn"
+              onClick={onOpenArabicCalendar}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700/50 text-xs font-medium text-amber-300 hover:text-amber-200 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+              title="আরবী ক্যালেন্ডার খুলুন"
+            >
+              🌙 {dynamicHijriDate}
+            </button>
+          )}
+
+          {/* Mosque & Jamaat Settings */}
+          {onOpenMosqueSettings && (
+            <button
+              id="open-mosque-modal-btn"
+              onClick={onOpenMosqueSettings}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700/50 text-xs font-medium text-emerald-200 hover:text-white transition-colors cursor-pointer shadow-xs"
+              title="মসজিদের নাম ও জামাতের সময়সূচী কনফিগার করুন"
+            >
+              <Building2 className="w-3.5 h-3.5 text-amber-300" />
+              <span>{mosqueName ? `🕌 ${mosqueName}` : '🕌 জামাত সময়'}</span>
+            </button>
+          )}
+
           {/* JSON Data & Configuration */}
           <button
             id="open-data-modal-btn"
@@ -119,6 +203,25 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </div>
+
+      {/* GPS Location Notification Banner if detected or error */}
+      {locationStatusMsg && (
+        <div className="bg-emerald-900/90 border-t border-emerald-800/80 px-4 sm:px-6 py-2">
+          <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-amber-200">
+              <LocateFixed className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="font-medium">{locationStatusMsg}</span>
+            </div>
+            <button
+              onClick={onClearDetectedLocation}
+              className="text-emerald-300 hover:text-white p-1 rounded hover:bg-emerald-800 transition-colors"
+              title="বার্তা বন্ধ করুন"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* District & Location Selector Bar */}
       <div className="bg-emerald-900/60 border-t border-emerald-800/60 px-4 sm:px-6 py-2.5 space-y-2">
@@ -189,16 +292,12 @@ export const Header: React.FC<HeaderProps> = ({
               Today
             </button>
             <button
-              id="quick-date-jan1"
-              onClick={() => {
-                const d = new Date();
-                d.setMonth(0);
-                d.setDate(1);
-                onSelectDate(d);
-              }}
-              className="px-2 py-0.5 rounded text-xs bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 border border-emerald-600/40"
+              id="quick-date-today-formatted"
+              onClick={() => onSelectDate(new Date())}
+              className="px-3 py-1 bg-emerald-950 text-emerald-400 rounded text-xs font-mono border border-emerald-800/50 hover:bg-emerald-900 transition-colors"
+              title="আজকের তারিখে যান"
             >
-              01-01
+              {todayFormattedDate}
             </button>
           </div>
         </div>

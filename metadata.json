@@ -1,6 +1,6 @@
 {
   "name": "Prayer & Fasting Timetable",
   "description": "Accurate Islamic prayer, Sehri, and Iftar timetable with constituency offsets for Cachar, Hailakandi, and Karimganj districts.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

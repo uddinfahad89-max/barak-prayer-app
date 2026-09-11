@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "Prayer & Fasting Timetable",
+  "short_name": "Prayer Time",
+  "description": "Accurate Islamic prayer, Sehri, and Iftar timetable with constituency offsets for Cachar, Hailakandi, and Karimganj districts.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#064e3b",
+  "theme_color": "#064e3b",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
