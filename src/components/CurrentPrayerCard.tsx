@@ -162,10 +162,13 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
           >
             <Moon className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform shrink-0" />
             <span className="font-semibold">{hijriDate.formattedBn}</span>
+            <span className="text-[11px] text-emerald-200/90 font-mono hidden sm:inline">
+              ({hijriDate.formattedEn})
+            </span>
             <span className="text-[10px] text-emerald-300 font-mono bg-emerald-900/60 px-1.5 py-0.5 rounded border border-emerald-700/40">
               {todayFormattedDate}
             </span>
-            <span className="text-[11px] text-emerald-300 font-serif opacity-90 hidden md:inline" dir="rtl">
+            <span className="text-[11px] text-emerald-300 font-serif opacity-90 hidden lg:inline" dir="rtl">
               ({hijriDate.formattedAr})
             </span>
             {hijriDate.specialEvent && (

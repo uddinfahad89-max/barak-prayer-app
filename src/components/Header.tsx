@@ -68,19 +68,6 @@ export const Header: React.FC<HeaderProps> = ({
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const todayFormattedDate = `${day}-${month}`; // যেমন: 11-09
 
-  // সঠিক হিজরি (আরবি) তারিখ পাওয়ার নিয়ম
-  let dynamicHijriDate = '';
-  try {
-    const hijriFormatter = new Intl.DateTimeFormat('bn-BD-u-ca-islamic-umalqura', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    dynamicHijriDate = hijriFormatter.format(today); // যেমন: ২৯ রবিউল আউয়াল ১৪৪৮ হিজরী
-  } catch {
-    dynamicHijriDate = `${toBengaliNumerals(hijriDate.day)} ${hijriDate.monthNameBn} ${toBengaliNumerals(hijriDate.year)} হিজরী`;
-  }
-
   const filteredLocations = locations.filter((loc) => {
     if (districtFilter === 'all') return true;
     return loc.district.toLowerCase() === districtFilter.toLowerCase();
@@ -176,10 +163,13 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="open-arabic-calendar-header-btn"
               onClick={onOpenArabicCalendar}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700/50 text-xs font-medium text-amber-300 hover:text-amber-200 transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700/60 text-xs font-medium text-amber-300 hover:text-amber-200 transition-colors cursor-pointer shadow-xs whitespace-nowrap group"
               title="আরবী ক্যালেন্ডার খুলুন"
             >
-              🌙 {dynamicHijriDate}
+              <span className="font-semibold">🌙 {hijriDate.formattedBn}</span>
+              <span className="text-[11px] text-emerald-200/90 font-mono hidden sm:inline">
+                ({hijriDate.formattedEn})
+              </span>
             </button>
           )}
 

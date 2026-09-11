@@ -182,22 +182,8 @@ export function getTodayFormattedDate(date: Date = new Date()): string {
  * সঠিক হিজরি (আরবি) তারিখ পাওয়ার নিয়ম
  */
 export function getDynamicHijriDate(date: Date = new Date(), adjustmentDays: number = 0): string {
-  const adjustedDate = new Date(date.getTime() + adjustmentDays * 24 * 60 * 60 * 1000);
-  try {
-    const hijriFormatter = new Intl.DateTimeFormat('bn-BD-u-ca-islamic-umalqura', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-    const formatted = hijriFormatter.format(adjustedDate);
-    if (!formatted.includes('হিজরী') && !formatted.includes('হিজরি')) {
-      return `${formatted} হিজরী`;
-    }
-    return formatted;
-  } catch {
-    const h = calculateHijriFromDate(adjustedDate);
-    return h.formattedBn;
-  }
+  const h = calculateHijriFromDate(date, adjustmentDays);
+  return h.formattedBn;
 }
 
 /**
@@ -255,21 +241,8 @@ export function calculateHijriFromDate(date: Date, adjustmentDays: number = 0): 
     const specialEvent = SPECIAL_ISLAMIC_EVENTS[eventKey]?.titleBn;
     const isAyyamAlBeed = hDay >= 13 && hDay <= 15;
 
-    // সঠিক হিজরি (আরবি) তারিখ পাওয়ার নিয়ম (Intl বাংলা লোকাল)
-    let dynamicHijriDate = '';
-    try {
-      const hijriFormatter = new Intl.DateTimeFormat('bn-BD-u-ca-islamic-umalqura', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-      dynamicHijriDate = hijriFormatter.format(adjustedDate);
-      if (!dynamicHijriDate.includes('হিজরী') && !dynamicHijriDate.includes('হিজরি')) {
-        dynamicHijriDate = `${dynamicHijriDate} হিজরী`;
-      }
-    } catch {
-      dynamicHijriDate = `${toBengaliNumerals(hDay)} ${monthMeta.nameBn} ${toBengaliNumerals(hYear)} হিজরী`;
-    }
+    // সঠিক ও পরিচ্ছন্ন হিজরি বাংলা তারিখ
+    const cleanHijriBn = `${toBengaliNumerals(hDay)} ${monthMeta.nameBn} ${toBengaliNumerals(hYear)} হিজরী`;
 
     return {
       day: hDay,
@@ -280,7 +253,7 @@ export function calculateHijriFromDate(date: Date, adjustmentDays: number = 0): 
       year: hYear,
       formattedEn: `${hDay} ${monthMeta.nameEn} ${hYear} AH`,
       formattedAr: `${toArabicNumerals(hDay)} ${monthMeta.nameAr} ${toArabicNumerals(hYear)} هـ`,
-      formattedBn: dynamicHijriDate,
+      formattedBn: cleanHijriBn,
       specialEvent,
       isAyyamAlBeed,
     };
@@ -349,22 +322,22 @@ export function generateHijriMonthDays(
   selectedDate: Date,
   adjustmentDays: number = 0
 ): HijriDayCell[] {
-  // Approximate search range around the year
-  // Find the Gregorian date where calculateHijriFromDate gives targetHijriYear and targetHijriMonthIndex
   const today = new Date();
   const currentHijri = calculateHijriFromDate(selectedDate, adjustmentDays);
 
-  // Offset difference in lunar months (~29.53 days)
+  // Offset difference in lunar months (~29.53059 days)
   const monthDiff =
     (targetHijriYear - currentHijri.year) * 12 + (targetHijriMonthIndex - currentHijri.monthIndex);
-  const approxTargetTime = selectedDate.getTime() + monthDiff * 29.53 * 24 * 60 * 60 * 1000;
+  
+  // Calculate approximate Day 1 anchor
+  const curMonthDay1Time = selectedDate.getTime() - (currentHijri.day - 1) * 24 * 60 * 60 * 1000;
+  const approxDay1Time = curMonthDay1Time + monthDiff * 29.53059 * 24 * 60 * 60 * 1000;
 
-  // Search around approxTargetTime ± 20 days to find Day 1
-  let anchorDate = new Date(approxTargetTime);
+  // Search around approxDay1Time to find exact Day 1
   let startGregorian: Date | null = null;
 
-  for (let offset = -20; offset <= 20; offset++) {
-    const testDate = new Date(approxTargetTime + offset * 24 * 60 * 60 * 1000);
+  for (let offset = -15; offset <= 15; offset++) {
+    const testDate = new Date(approxDay1Time + offset * 24 * 60 * 60 * 1000);
     const h = calculateHijriFromDate(testDate, adjustmentDays);
     if (h.year === targetHijriYear && h.monthIndex === targetHijriMonthIndex && h.day === 1) {
       startGregorian = testDate;
@@ -372,27 +345,37 @@ export function generateHijriMonthDays(
     }
   }
 
-  // Fallback if not found exactly: estimate
+  // Wider search fallback if needed
   if (!startGregorian) {
-    startGregorian = new Date(anchorDate);
+    for (let offset = -45; offset <= 45; offset++) {
+      const testDate = new Date(approxDay1Time + offset * 24 * 60 * 60 * 1000);
+      const h = calculateHijriFromDate(testDate, adjustmentDays);
+      if (h.year === targetHijriYear && h.monthIndex === targetHijriMonthIndex && h.day === 1) {
+        startGregorian = testDate;
+        break;
+      }
+    }
+  }
+
+  if (!startGregorian) {
+    startGregorian = new Date(approxDay1Time);
   }
 
   const cells: HijriDayCell[] = [];
-  const startDayTime = new Date(
-    startGregorian.getFullYear(),
-    startGregorian.getMonth(),
-    startGregorian.getDate(),
-    12,
-    0,
-    0
-  );
 
-  for (let d = 0; d < 30; d++) {
-    const currDate = new Date(startDayTime.getTime() + d * 24 * 60 * 60 * 1000);
+  for (let d = 0; d < 32; d++) {
+    const currDate = new Date(
+      startGregorian.getFullYear(),
+      startGregorian.getMonth(),
+      startGregorian.getDate() + d,
+      12,
+      0,
+      0
+    );
     const h = calculateHijriFromDate(currDate, adjustmentDays);
 
-    // Stop if rolled into next month
-    if (d >= 28 && h.monthIndex !== targetHijriMonthIndex) {
+    // Stop when rolled into next month
+    if (h.monthIndex !== targetHijriMonthIndex) {
       break;
     }
 

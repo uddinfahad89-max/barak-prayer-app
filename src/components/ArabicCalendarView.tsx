@@ -111,7 +111,8 @@ export const ArabicCalendarView: React.FC<ArabicCalendarViewProps> = ({
             <p className="text-xs text-emerald-300/90 mt-1 flex flex-wrap items-center gap-2">
               <span>চাঁদের হিসাব ও ইসলামিক বিশেষ দিনসমূহ</span>
               <span className="text-emerald-500">•</span>
-              <span className="text-amber-300 font-medium">আজ: {currentHijri.formattedBn}</span>
+              <span className="text-amber-300 font-bold">আজ: {currentHijri.formattedBn}</span>
+              <span className="text-emerald-200/90 font-mono text-[11px] hidden sm:inline">({currentHijri.formattedEn})</span>
               <span className="text-[10px] bg-emerald-900/80 px-1.5 py-0.5 rounded text-emerald-300 font-mono border border-emerald-700/50">
                 {getTodayFormattedDate(selectedDate)}
               </span>
@@ -165,23 +166,33 @@ export const ArabicCalendarView: React.FC<ArabicCalendarViewProps> = ({
                   🌙 চাঁদ দেখার সামঞ্জস্য (Local Moon Sighting):
                 </span>{' '}
                 <span>
-                  বরাক উপত্যকা ও ভারতীয় উপমহাদেশে স্থানীয় চাঁদ দেখার তারতম্যের কারণে হিজরি তারিখ ১ বা ২ দিন আগে-পিছে হতে পারে।
+                  বরাক উপত্যকা ও ভারতীয় উপমহাদেশে স্থানীয় চাঁদ দেখার তারতম্যের কারণে হিজরি তারিখ ১ বা ২ দিন আগে-পিছে নির্ধারণ করা যায়।
                 </span>
+                <div className="text-[11px] text-emerald-300/90 mt-1">
+                  স্বাভাবিক (০) মান অনুযায়ী আজ: <strong className="text-amber-300">২৯ রবিউল আউয়াল (29 Rabi' al-Awwal)</strong>
+                </div>
               </div>
-              <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                {[-2, -1, 0, 1, 2].map((adj) => (
-                  <button
-                    key={adj}
-                    onClick={() => onAdjustmentChange(adj)}
-                    className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
-                      hijriAdjustment === adj
-                        ? 'bg-amber-400 text-stone-950 shadow-sm'
-                        : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800'
-                    }`}
-                  >
-                    {adj === 0 ? 'স্বাভাবিক (০)' : adj > 0 ? `+${adj}` : adj}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-auto">
+                {[-2, -1, 0, 1, 2].map((adj) => {
+                  const testH = calculateHijriFromDate(new Date(), adj);
+                  return (
+                    <button
+                      key={adj}
+                      onClick={() => onAdjustmentChange(adj)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex flex-col items-center ${
+                        hijriAdjustment === adj
+                          ? 'bg-amber-400 text-stone-950 shadow-md ring-2 ring-amber-300'
+                          : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700/50'
+                      }`}
+                      title={`আজ হবে: ${testH.day} ${testH.monthNameEn}`}
+                    >
+                      <span>{adj === 0 ? '০ (মূল)' : adj > 0 ? `+${adj}` : adj}</span>
+                      <span className="text-[10px] opacity-80 font-normal">
+                        {toBengaliNumerals(testH.day)} {testH.monthNameBn.slice(0, 5)}..
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>

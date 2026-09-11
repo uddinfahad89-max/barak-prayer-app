@@ -27,7 +27,7 @@ import { ArabicCalendarView } from './components/ArabicCalendarView';
 import { InstallHelpModal } from './components/InstallHelpModal';
 import { IndianTimePicker } from './components/IndianTimePicker';
 import { playPrayerChime, playAzan, stopAzan, setAzanEndCallback } from './utils/audioAlert';
-import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck, Smartphone, Volume2, Square } from 'lucide-react';
+import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck, Smartphone, Volume2, Square, Heart } from 'lucide-react';
 
 export default function App() {
   // State for user data
@@ -197,7 +197,7 @@ export default function App() {
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
               new Notification(`🕌 ${mosqueName || 'মসজিদ'} - জামাতের সময়!`, {
                 body: `${prayer} নামাজের জামাতের সময় হয়ে গেছে।`,
-                icon: '/icon.png',
+                icon: '/icon.svg',
               });
             }
           }
@@ -743,14 +743,27 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-stone-200 mt-8 py-5 text-center text-xs text-stone-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>
-            Barak Valley Islamic Prayer &amp; Fasting Timetable • Cachar (ক্যাছাড়), Hailakandi (হাইলাকান্দি) &amp; Karimganj (করিমগঞ্জ)
-          </span>
-          <span className="text-stone-400">
-            16 Synchronized Constituencies • Silchar (0 min Baseline)
-          </span>
+      <footer id="app-footer" className="bg-white border-t border-stone-200 mt-8 py-6 text-xs text-stone-600">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-center md:text-left space-y-1">
+            <p className="font-semibold text-stone-800">
+              বরাক উপত্যকা ইসলামিক নামাজ ও রোজার স্থায়ী সময়সূচি
+            </p>
+            <p className="text-stone-500">
+              ক্যাছাড় (Cachar), হাইলাকান্দি (Hailakandi) ও করিমগঞ্জ (Karimganj) • ১৬টি নির্বাচনী এলাকা
+            </p>
+          </div>
+
+          {/* Creator Attribution */}
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-100/70 border border-emerald-300/80 px-4 py-2 rounded-xl text-emerald-950 shadow-2xs">
+              <span className="text-stone-600 font-medium">অ্যাপটি তৈরি করেছেন:</span>
+              <span className="font-bold text-emerald-900 tracking-wide flex items-center gap-1.5">
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" />
+                <span>Fahad Uddin (ফাহাদ উদ্দিন)</span>
+              </span>
+            </div>
+          </div>
         </div>
       </footer>
 

@@ -61,7 +61,7 @@ export const MosqueSettingsModal: React.FC<MosqueSettingsModalProps> = ({
           playPrayerChime();
           new Notification('🕌 নোটিফিকেশন সক্রিয় হয়েছে!', {
             body: 'জামাতের নির্ধারিত সময়ে আপনি স্বয়ংক্রিয় অ্যালার্ম পাবেন।',
-            icon: '/icon.png',
+            icon: '/icon.svg',
           });
         }
       } catch (err) {
