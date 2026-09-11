@@ -48,6 +48,26 @@ export function minutesTo12H(totalMinutes: number): string {
 }
 
 /**
+ * Formats 24-hour time (e.g. "20:00", "13:00", "17:30") to Indian 12-hour format ("08:00 PM", "01:00 PM", "05:30 PM")
+ */
+export function formatToIndian12Hour(timeStr?: string): string {
+  if (!timeStr) return '';
+  const trimmed = timeStr.trim();
+  if (trimmed.toUpperCase().includes('AM') || trimmed.toUpperCase().includes('PM')) {
+    return trimmed;
+  }
+  const parts = trimmed.split(':');
+  if (parts.length < 2) return trimmed;
+  let hour = parseInt(parts[0], 10);
+  const min = parseInt(parts[1], 10);
+  if (isNaN(hour) || isNaN(min)) return trimmed;
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  return `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')} ${ampm}`;
+}
+
+/**
  * Applies location offset (in minutes) to a base prayer time.
  */
 export function applyOffset(baseTimeStr: string, prayerKey: PrayerKey, offsetMinutes: number): {

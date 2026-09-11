@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Building2, Bell, Check, Clock, Volume2, Sparkles, ShieldCheck } from 'lucide-react';
+import { X, Building2, Bell, Check, Clock, Volume2, Sparkles, ShieldCheck, Square } from 'lucide-react';
 import { JamaatTimes, PrayerDisplayInfo } from '../types';
-import { playPrayerChime } from '../utils/audioAlert';
+import { playPrayerChime, playAzan, stopAzan, isAzanPlaying } from '../utils/audioAlert';
+import { formatToIndian12Hour } from '../utils/prayerCalc';
 
 interface MosqueSettingsModalProps {
   isOpen: boolean;
@@ -10,6 +11,8 @@ interface MosqueSettingsModalProps {
   jamaatTimes: JamaatTimes;
   onSave: (name: string, times: JamaatTimes) => void;
   currentPrayers?: PrayerDisplayInfo[];
+  playAzanOnJamaat?: boolean;
+  onTogglePlayAzan?: (enabled: boolean) => void;
 }
 
 export const MosqueSettingsModal: React.FC<MosqueSettingsModalProps> = ({
@@ -19,8 +22,12 @@ export const MosqueSettingsModal: React.FC<MosqueSettingsModalProps> = ({
   jamaatTimes: initialJamaatTimes,
   onSave,
   currentPrayers = [],
+  playAzanOnJamaat = true,
+  onTogglePlayAzan,
 }) => {
   const [name, setName] = useState(initialMosqueName);
+  const [playAzanLocal, setPlayAzanLocal] = useState<boolean>(playAzanOnJamaat);
+  const [isAudioTesting, setIsAudioTesting] = useState<boolean>(false);
   const [times, setTimes] = useState<JamaatTimes>({
     Fajr: initialJamaatTimes.Fajr || '',
     Dhuhr: initialJamaatTimes.Dhuhr || '',
@@ -174,14 +181,17 @@ export const MosqueSettingsModal: React.FC<MosqueSettingsModalProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-stone-700 flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-stone-500" />
-                <span>প্রতিটি নামাজের জামাতের সময় (HH:MM ফরম্যাট)</span>
+                <span>প্রতিটি নামাজের জামাতের সময়</span>
               </label>
-              <span className="text-[11px] text-stone-400 font-mono">24-hour (e.g. 13:30)</span>
+              <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                🇮🇳 ভারতীয় সময় (12h AM/PM)
+              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {prayerLabels.map((p) => {
                 const isConfigured = Boolean(times[p.key]);
+                const indian12H = times[p.key] ? formatToIndian12Hour(times[p.key]) : '';
                 return (
                   <div
                     key={p.key}
@@ -197,8 +207,8 @@ export const MosqueSettingsModal: React.FC<MosqueSettingsModalProps> = ({
                         <span className="text-stone-400 font-normal">({p.nameEn})</span>
                       </span>
                       {isConfigured && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-950 font-medium">
-                          সেট করা
+                        <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-700 text-white font-mono font-bold shadow-xs">
+                          {indian12H}
                         </span>
                       )}
                     </div>
@@ -213,6 +223,71 @@ export const MosqueSettingsModal: React.FC<MosqueSettingsModalProps> = ({
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Azan Alert Setting Card */}
+          <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={playAzanLocal}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setPlayAzanLocal(checked);
+                    if (onTogglePlayAzan) onTogglePlayAzan(checked);
+                  }}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-stone-300"
+                />
+                <span className="font-bold text-stone-800 flex items-center gap-1.5">
+                  <Volume2 className="w-4 h-4 text-emerald-700" />
+                  <span>জামাতের সময় আযান দিন (Azan Alert)</span>
+                </span>
+              </label>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                  playAzanLocal
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-stone-200 text-stone-600'
+                }`}
+              >
+                {playAzanLocal ? 'আযান চালু' : 'আযান বন্ধ'}
+              </span>
+            </div>
+            <p className="text-stone-600 text-[11px] leading-relaxed">
+              ওয়াক্তের জামাতের সময় হলে ডিভাইসে পবিত্র মদিনা শরীফের সুমধুর আযান বাজবে। ইচ্ছা না থাকলে অপশনটি বন্ধ রাখা যাবে।
+            </p>
+            <div className="flex items-center gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isAudioTesting) {
+                    stopAzan();
+                    setIsAudioTesting(false);
+                  } else {
+                    playAzan(1.0);
+                    setIsAudioTesting(true);
+                  }
+                }}
+                className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                  isAudioTesting
+                    ? 'bg-rose-600 text-white animate-pulse'
+                    : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                }`}
+              >
+                {isAudioTesting ? (
+                  <>
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                    <span>⏹ আযান বন্ধ করুন</span>
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5" />
+                    <span>▶ টেস্ট আযান শুনুন</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 

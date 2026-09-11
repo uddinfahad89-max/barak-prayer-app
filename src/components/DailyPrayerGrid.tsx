@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sunrise, Sunset, Sun, Moon, Sparkles, Check, Clock, Building2 } from 'lucide-react';
 import { PrayerDisplayInfo, LocationMeta, JamaatTimes } from '../types';
+import { formatToIndian12Hour } from '../utils/prayerCalc';
 
 interface DailyPrayerGridProps {
   prayers: PrayerDisplayInfo[];
@@ -210,7 +211,9 @@ export const DailyPrayerGrid: React.FC<DailyPrayerGridProps> = ({
                       <Building2 className="w-3 h-3 text-emerald-700" />
                       <span>জামাত:</span>
                     </span>
-                    <span className="font-mono font-bold text-emerald-900">{jamaatTime}</span>
+                    <span className="font-mono font-bold text-emerald-900">
+                      {use24Hour ? jamaatTime : formatToIndian12Hour(jamaatTime)}
+                    </span>
                   </div>
                 )}
               </div>

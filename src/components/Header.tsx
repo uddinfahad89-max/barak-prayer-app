@@ -116,6 +116,9 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
             </span>
             <span className="font-semibold">{currentTimeStr}</span>
+            <span className="text-[10px] bg-amber-400/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-400/30">
+              IST
+            </span>
           </div>
 
           {/* 12h / 24h Toggle */}

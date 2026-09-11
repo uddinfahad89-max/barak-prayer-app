@@ -14,7 +14,6 @@ import {
   findClosestConstituency,
   matchConstituencyByAddressText,
 } from './utils/geoDetect';
-import { playPrayerChime } from './utils/audioAlert';
 import { Header } from './components/Header';
 import { CurrentPrayerCard } from './components/CurrentPrayerCard';
 import { DailyPrayerGrid } from './components/DailyPrayerGrid';
@@ -26,7 +25,9 @@ import { CalendarPosterView } from './components/CalendarPosterView';
 import { MosqueSettingsModal } from './components/MosqueSettingsModal';
 import { ArabicCalendarView } from './components/ArabicCalendarView';
 import { InstallHelpModal } from './components/InstallHelpModal';
-import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck, Smartphone } from 'lucide-react';
+import { IndianTimePicker } from './components/IndianTimePicker';
+import { playPrayerChime, playAzan, stopAzan, setAzanEndCallback } from './utils/audioAlert';
+import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck, Smartphone, Volume2, Square } from 'lucide-react';
 
 export default function App() {
   // State for user data
@@ -111,6 +112,35 @@ export default function App() {
 
   const lastNotifiedMinuteRef = useRef<string>('');
 
+  // জামাতের সময় আযান বাজানোর সেটিং ("জুদি কেহ চাই")
+  const [playAzanOnJamaat, setPlayAzanOnJamaat] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('playAzanOnJamaat');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const [isAzanActive, setIsAzanActive] = useState<boolean>(false);
+  const [activeJamaatAlert, setActiveJamaatAlert] = useState<{ prayer: string; time: string } | null>(null);
+
+  const handleTogglePlayAzan = (enabled: boolean) => {
+    setPlayAzanOnJamaat(enabled);
+    try {
+      localStorage.setItem('playAzanOnJamaat', String(enabled));
+    } catch (err) {
+      console.warn('Storage save error:', err);
+    }
+  };
+
+  useEffect(() => {
+    setAzanEndCallback(() => {
+      setIsAzanActive(false);
+      setActiveJamaatAlert(null);
+    });
+  }, []);
+
   // তথ্য সেভ করার ফাংশন
   const saveMosqueSettings = (name: string, times: any) => {
     setMosqueName(name);
@@ -134,18 +164,36 @@ export default function App() {
     }
   };
 
-  // সময় চেক করে অ্যালার্ম/নোটিফিকেশন দেওয়ার ইফেক্ট
+  // সময় চেক করে অ্যালার্ম/আজান দেওয়ার ইফেক্ট (ভারতীয় সময় IST)
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const currentTime = now.toTimeString().slice(0, 5); // HH:MM ফরম্যাট
+      // ভারতীয় সময় (Asia/Kolkata IST) HH:MM
+      const currentTime = now.toLocaleTimeString('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
 
       Object.entries(jamaatTimes).forEach(([prayer, time]) => {
         if (time && time === currentTime) {
           const alertKey = `${prayer}_${currentTime}`;
           if (lastNotifiedMinuteRef.current !== alertKey) {
             lastNotifiedMinuteRef.current = alertKey;
-            playPrayerChime();
+
+            // ব্যবহারকারী যদি আযান চান ("জুদি কেহ চাই"), তবে আযান বাজবে, অন্যথায় শান্ত চাইম
+            if (playAzanOnJamaat) {
+              playAzan(1.0).then((success) => {
+                if (success) {
+                  setIsAzanActive(true);
+                  setActiveJamaatAlert({ prayer, time: currentTime });
+                }
+              });
+            } else {
+              playPrayerChime();
+            }
+
             if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
               new Notification(`🕌 ${mosqueName || 'মসজিদ'} - জামাতের সময়!`, {
                 body: `${prayer} নামাজের জামাতের সময় হয়ে গেছে।`,
@@ -158,7 +206,7 @@ export default function App() {
     }, 30000); // প্রতি ৩০ সেকেন্ড পর পর চেক করবে
 
     return () => clearInterval(interval);
-  }, [jamaatTimes, mosqueName]);
+  }, [jamaatTimes, mosqueName, playAzanOnJamaat]);
 
   // আইপি ভিত্তিক ফলব্যাক লোকেশন ফাংশন
   const tryIpFallback = async () => {
@@ -274,9 +322,10 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Format live time string
+  // Format live time string (ভারতীয় সময় IST)
   const currentTimeStr = useMemo(() => {
     return now.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Kolkata',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
@@ -537,37 +586,127 @@ export default function App() {
             {/* আমার মসজিদ সেটিং করার ফর্ম/বাটন */}
             <div className="mt-4 p-5 bg-stone-800 rounded-xl text-white border border-stone-700 shadow-md">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                <h3 className="font-bold text-base flex items-center gap-2">
-                  <span>🕌 আপনার মসজিদের জামাত সেটিং</span>
-                  {mosqueName && (
-                    <span className="text-xs font-normal text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                      সক্রিয়: {mosqueName}
-                    </span>
-                  )}
-                </h3>
-                <p className="text-xs text-stone-400">প্রতিটি ওয়াক্তের জামাত সময় সেট করে রাখুন</p>
+                <div>
+                  <h3 className="font-bold text-base flex items-center gap-2">
+                    <span>🕌 আপনার মসজিদের জামাত সেটিং</span>
+                    {mosqueName && (
+                      <span className="text-xs font-normal text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
+                        সক্রিয়: {mosqueName}
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-stone-400 mt-0.5">
+                    ভারতীয় ১২-ঘণ্টা সময় (AM/PM) ফরম্যাটে প্রতিটি ওয়াক্তের জামাত সময় সেট করুন
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJamaatTimes({
+                      Fajr: '05:15',
+                      Dhuhr: '13:15',
+                      Asr: '16:15',
+                      Maghrib: '17:35',
+                      Isha: '20:00',
+                    });
+                  }}
+                  className="px-2.5 py-1.5 text-xs font-medium text-amber-300 bg-amber-950/70 hover:bg-amber-900 border border-amber-800/80 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-xs"
+                  title="বরাক উপত্যকার আদর্শ ভারতীয় জামাতের সময়সূচী স্বয়ংক্রিয় পূরণ"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>আদর্শ ভারতীয় সময় পূরণ</span>
+                </button>
               </div>
               
               <input 
                 type="text" 
-                placeholder="মসজিদের নাম লিখুন" 
+                placeholder="মসজিদের নাম লিখুন (যেমন: কোটামনি বাজার জামে মসজিদ)" 
                 value={mosqueName} 
                 onChange={(e) => setMosqueName(e.target.value)}
                 className="p-2.5 rounded-lg bg-stone-700 w-full mb-3 text-white border border-stone-600 focus:border-emerald-500 focus:outline-none text-sm placeholder-stone-400"
               />
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
-                {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayer) => (
-                  <div key={prayer} className="flex flex-col bg-stone-900/50 p-2.5 rounded-lg border border-stone-700/80">
-                    <label className="text-xs font-semibold text-stone-300 mb-1">{prayer} জামাত:</label>
-                    <input 
-                      type="time" 
-                      value={jamaatTimes[prayer] || ''} 
-                      onChange={(e) => setJamaatTimes({...jamaatTimes, [prayer]: e.target.value})}
-                      className="p-1.5 rounded bg-stone-700 text-white font-mono text-sm border border-stone-600 focus:border-emerald-500 focus:outline-none w-full"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-sm">
+                {[
+                  { key: 'Fajr', label: 'Fajr জামাত', nameBn: 'ফজর', defaultAmPm: 'AM' as const },
+                  { key: 'Dhuhr', label: 'Dhuhr জামাত', nameBn: 'জোহর', defaultAmPm: 'PM' as const },
+                  { key: 'Asr', label: 'Asr জামাত', nameBn: 'আসর', defaultAmPm: 'PM' as const },
+                  { key: 'Maghrib', label: 'Maghrib জামাত', nameBn: 'মাগরিব', defaultAmPm: 'PM' as const },
+                  { key: 'Isha', label: 'Isha জামাত', nameBn: 'এশা', defaultAmPm: 'PM' as const },
+                ].map((item) => (
+                  <IndianTimePicker
+                    key={item.key}
+                    label={item.label}
+                    nameBn={item.nameBn}
+                    value={jamaatTimes[item.key] || ''}
+                    defaultAmPm={item.defaultAmPm}
+                    onChange={(newVal) => setJamaatTimes((prev) => ({ ...prev, [item.key]: newVal }))}
+                  />
                 ))}
+              </div>
+
+              {/* আজান চালু/বন্ধ করার অপশন ও টেস্ট বাটন ("জুদি কেহ চাই") */}
+              <div className="mt-3.5 p-3.5 rounded-xl bg-stone-900/80 border border-stone-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={playAzanOnJamaat}
+                    onChange={(e) => handleTogglePlayAzan(e.target.checked)}
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-stone-800 border-stone-600 cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>জামাতের সময়ে সুমধুর আযান দিন</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                          playAzanOnJamaat
+                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                            : 'bg-stone-800 text-stone-400'
+                        }`}
+                      >
+                        {playAzanOnJamaat ? 'আযান চালু' : 'আযান বন্ধ'}
+                      </span>
+                    </span>
+                    <span className="text-[11px] text-stone-400 block mt-0.5">
+                      ওয়াক্তের জামাত সময় উপস্থিত হলে পবিত্র মদিনা শরীফের আযান বাজবে (যদি চান চালু রাখুন)
+                    </span>
+                  </div>
+                </label>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isAzanActive) {
+                        stopAzan();
+                        setIsAzanActive(false);
+                        setActiveJamaatAlert(null);
+                      } else {
+                        playAzan(1.0);
+                        setIsAzanActive(true);
+                      }
+                    }}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                      isAzanActive
+                        ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
+                        : 'bg-stone-800 hover:bg-stone-700 text-emerald-300 border-stone-600'
+                    }`}
+                  >
+                    {isAzanActive ? (
+                      <>
+                        <Square className="w-3.5 h-3.5 fill-current" />
+                        <span>⏹ আযান বন্ধ করুন</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>▶ টেস্ট আযান শুনুন</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button 
@@ -633,6 +772,8 @@ export default function App() {
         jamaatTimes={jamaatTimes}
         onSave={saveMosqueSettings}
         currentPrayers={prayers}
+        playAzanOnJamaat={playAzanOnJamaat}
+        onTogglePlayAzan={handleTogglePlayAzan}
       />
 
       {/* Install & Security Help Modal */}
@@ -642,6 +783,37 @@ export default function App() {
         onInstallPwa={handleInstallPwa}
         canInstallPwa={!!deferredPrompt}
       />
+
+      {/* Floating Active Azan / Jamaat Alert Banner */}
+      {activeJamaatAlert && (
+        <div className="fixed bottom-5 right-5 left-5 sm:left-auto sm:w-96 z-50 bg-stone-900/95 backdrop-blur-md text-white p-4 rounded-2xl border border-emerald-500 shadow-2xl shadow-emerald-950/50 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+              <Volume2 className="w-5 h-5 animate-pulse" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-white">
+                🕌 {mosqueName ? `${mosqueName} - ` : ''}{activeJamaatAlert.prayer} জামাতের সময়!
+              </h4>
+              <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>সুমধুর আযান চলছে...</span>
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              stopAzan();
+              setIsAzanActive(false);
+              setActiveJamaatAlert(null);
+            }}
+            className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-colors shadow-sm shrink-0 cursor-pointer flex items-center gap-1.5"
+          >
+            <Square className="w-3.5 h-3.5 fill-current" />
+            <span>থামান</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
