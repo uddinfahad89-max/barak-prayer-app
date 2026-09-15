@@ -74,7 +74,95 @@ export function findClosestConstituency(
 }
 
 /**
- * Match by text tokens from Nominatim reverse geocode response
+ * Calculate Qibla bearing (compass angle towards the Holy Kaaba in Makkah)
+ * Kaaba coordinates: 21.422487° N, 39.826206° E
+ */
+export const MAKKAH_LAT = 21.422487;
+export const MAKKAH_LON = 39.826206;
+
+export function calculateQiblaBearing(lat: number, lon: number): number {
+  const phiK = (MAKKAH_LAT * Math.PI) / 180.0;
+  const lambdaK = (MAKKAH_LON * Math.PI) / 180.0;
+  const phi = (lat * Math.PI) / 180.0;
+  const lambda = (lon * Math.PI) / 180.0;
+
+  const deltaLambda = lambdaK - lambda;
+  const y = Math.sin(deltaLambda);
+  const x = Math.cos(phi) * Math.tan(phiK) - Math.sin(phi) * Math.cos(deltaLambda);
+
+  let qibla = (Math.atan2(y, x) * 180.0) / Math.PI;
+  qibla = (qibla + 360.0) % 360.0;
+  return Math.round(qibla * 10) / 10;
+}
+
+export function calculateDistanceToMakkah(lat: number, lon: number): number {
+  return Math.round(calculateDistanceKm(lat, lon, MAKKAH_LAT, MAKKAH_LON));
+}
+
+/**
+ * Reverse geocode coordinates to get user place name with multiple fast fallbacks
+ */
+export async function reverseGeocodeCity(lat: number, lon: number): Promise<{ city: string; fullAddress?: string; addressObj?: Record<string, string> }> {
+  // 1. Try BigDataCloud Client Reverse Geocoding (fast, CORS-friendly, reliable worldwide)
+  try {
+    const bdcRes = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+    );
+    if (bdcRes.ok) {
+      const data = await bdcRes.json();
+      const city = data.city || data.locality || data.principalSubdivision || data.countryName;
+      if (city && city.trim().length > 0) {
+        return {
+          city: city.trim(),
+          fullAddress: `${city}, ${data.principalSubdivision || ''}`,
+          addressObj: {
+            city: data.city || '',
+            locality: data.locality || '',
+            region: data.principalSubdivision || '',
+            country: data.countryName || '',
+          },
+        };
+      }
+    }
+  } catch {
+    // try next
+  }
+
+  // 2. Try OpenStreetMap Nominatim
+  try {
+    const nomRes = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`
+    );
+    if (nomRes.ok) {
+      const data = await nomRes.json();
+      const address = data.address || {};
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.suburb ||
+        address.county ||
+        address.state_district ||
+        address.state;
+      if (city) {
+        return {
+          city: city.trim(),
+          fullAddress: data.display_name,
+          addressObj: address,
+        };
+      }
+    }
+  } catch {
+    // fallback
+  }
+
+  // 3. Fallback to nearest Barak Valley / Indian city coordinate
+  const { constituency } = findClosestConstituency(lat, lon);
+  return { city: constituency.name };
+}
+
+/**
+ * Match by text tokens from reverse geocode response
  */
 export function matchConstituencyByAddressText(address: Record<string, string>): ConstituencyCoord | null {
   const fullText = Object.values(address).join(' ').toLowerCase();
@@ -88,3 +176,4 @@ export function matchConstituencyByAddressText(address: Record<string, string>):
   }
   return null;
 }
+

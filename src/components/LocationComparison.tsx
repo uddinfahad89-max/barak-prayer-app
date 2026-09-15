@@ -22,7 +22,7 @@ export const LocationComparison: React.FC<LocationComparisonProps> = ({
 
   const filteredLocations = locations.filter((loc) => {
     if (selectedDistrict === 'all') return true;
-    return loc.district.toLowerCase() === selectedDistrict.toLowerCase();
+    return loc.district?.toLowerCase() === selectedDistrict?.toLowerCase();
   });
 
   // Group by district

@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const filteredLocations = locations.filter((loc) => {
     if (districtFilter === 'all') return true;
-    return loc.district.toLowerCase() === districtFilter.toLowerCase();
+    return loc.district?.toLowerCase() === districtFilter?.toLowerCase();
   });
 
   return (

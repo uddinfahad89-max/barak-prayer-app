@@ -13,7 +13,10 @@ import {
 import {
   findClosestConstituency,
   matchConstituencyByAddressText,
+  reverseGeocodeCity,
 } from './utils/geoDetect';
+import { calculateHijriFromDate } from './utils/hijriCalendar';
+import { MuslimAppView } from './components/MuslimAppView';
 import { Header } from './components/Header';
 import { CurrentPrayerCard } from './components/CurrentPrayerCard';
 import { DailyPrayerGrid } from './components/DailyPrayerGrid';
@@ -46,6 +49,11 @@ export default function App() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'daily' | 'arabic' | 'poster' | 'all'>('daily');
+  const [mainNavTab, setMainNavTab] = useState<'home' | 'prayers' | 'quran' | 'ummah'>('home');
+  const [userCoords, setUserCoords] = useState<{ lat: number | null; lon: number | null }>({
+    lat: null,
+    lon: null,
+  });
 
   // PWA Install prompt listener
   useEffect(() => {
@@ -241,45 +249,33 @@ export default function App() {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           const { latitude, longitude } = position.coords;
+          setUserCoords({ lat: latitude, lon: longitude });
           try {
-            const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            );
-            if (res.ok) {
-              const data = await res.json();
-              const address = data.address || {};
-              const city =
-                address.city ||
-                address.town ||
-                address.village ||
-                address.suburb ||
-                address.county ||
-                address.state_district ||
-                'আপনার স্থান';
+            const { city, addressObj } = await reverseGeocodeCity(latitude, longitude);
+            if (city) {
               setUserCity(city);
+            }
 
-              // Find matching or closest constituency in Barak Valley
-              const textMatch = matchConstituencyByAddressText(address);
+            if (addressObj) {
+              const textMatch = matchConstituencyByAddressText(addressObj);
               if (textMatch) {
                 setSelectedLocationId(textMatch.id);
-                setLocationStatusMsg(`শনাক্তকৃত: ${city} (${textMatch.nameBn} বিধানসভা নির্বাচন করা হয়েছে)`);
+                setLocationStatusMsg(`শনাক্তকৃত: ${city} (${textMatch.nameBn} বিধানসভা)`);
                 return;
               }
             }
 
             // Fallback to coordinate math
             const { constituency, distanceKm } = findClosestConstituency(latitude, longitude);
-            setUserCity(constituency.nameBn);
             if (distanceKm <= 60) {
               setSelectedLocationId(constituency.id);
               setLocationStatusMsg(
-                `সনাক্তকৃত নিকটবর্তী বিধানসভা: ${constituency.nameBn} (দূরত্ব ~${distanceKm} কিমি)`
+                `শনাক্তকৃত নিকটবর্তী: ${city || constituency.nameBn} (~${distanceKm} কিমি)`
               );
             } else {
-              setLocationStatusMsg(`সনাক্তকৃত স্থান (শিলচর বেস অথবা কাস্টম অফসেট প্রযোজ্য)`);
+              setLocationStatusMsg(`শনাক্তকৃত স্থান: ${city || 'শিলচর বেস সময়'}`);
             }
           } catch {
-            // Reverse geocode failed, directly use coordinates
             const { constituency } = findClosestConstituency(latitude, longitude);
             setUserCity(constituency.nameBn);
             setSelectedLocationId(constituency.id);
@@ -290,12 +286,9 @@ export default function App() {
         },
         async (error) => {
           setIsDetectingLocation(false);
-          // Handle GPS denial or unavailability gracefully without throwing console.error
           if (error && error.code === 1) {
-            // PERMISSION_DENIED
-            setLocationStatusMsg('লোকেশন পারমিশন মেলেনি। তালিকা থেকে আপনার বিধানসভা নির্বাচন করুন।');
+            setLocationStatusMsg('লোকেশন পারমিশন মেলেনি। ডিফল্টভাবে শিলচর সেট করা আছে।');
           } else {
-            // POSITION_UNAVAILABLE or TIMEOUT - try IP fallback
             await tryIpFallback();
           }
         },
@@ -306,6 +299,11 @@ export default function App() {
       tryIpFallback();
     }
   };
+
+  // Auto-detect user's GPS / region on startup
+  useEffect(() => {
+    detectUserLocation();
+  }, []);
 
   const handleClearDetectedLocation = () => {
     setUserCity('');
@@ -421,351 +419,382 @@ export default function App() {
     setCustomOffset(0);
   };
 
+  const hijriData = useMemo(() => {
+    return calculateHijriFromDate(selectedDate, hijriAdjustment);
+  }, [selectedDate, hijriAdjustment]);
+
+  const sunrisePrayer = prayers.find((p) => p.key === 'sunrise');
+  const sunriseTimeStr = sunrisePrayer?.adjustedTime ? sunrisePrayer.adjustedTime.toLowerCase() : '5:23 am';
+
+  const prayerNameMap: Record<string, string> = {
+    sehri_end: 'Fajr',
+    sunrise: 'Ishraq',
+    dhuhr: 'Dhuhr',
+    asr: 'Asr',
+    maghrib: 'Maghrib',
+    isha: 'Isha',
+  };
+
+  const nextPrayerNameStr = nextPrayer?.key ? (prayerNameMap[nextPrayer.key] || 'Fajr') : 'Fajr';
+  const nextPrayerTimeStr = nextPrayer?.adjustedTime ? nextPrayer.adjustedTime.toLowerCase() : '4:08 am';
+
   return (
-    <div className="min-h-screen bg-stone-100/70 text-stone-800 flex flex-col font-sans">
-      {/* Top Header */}
-      <Header
-        locations={locations}
-        selectedLocationId={selectedLocationId}
-        onSelectLocation={setSelectedLocationId}
-        customOffset={customOffset}
-        onCustomOffsetChange={setCustomOffset}
-        currentTimeStr={currentTimeStr}
-        use24Hour={use24Hour}
-        onToggle24Hour={() => setUse24Hour(!use24Hour)}
-        asrMethod={asrMethod}
-        onToggleAsrMethod={() => setAsrMethod(asrMethod === 'hanafi' ? 'shafii' : 'hanafi')}
-        onOpenDataModal={() => setIsDataModalOpen(true)}
-        selectedDate={selectedDate}
-        onSelectDate={setSelectedDate}
-        hasUserOverrideForDate={hasUserOverride}
+    <>
+      <MuslimAppView
+        activeTab={mainNavTab}
+        setActiveTab={setMainNavTab}
         userCity={userCity}
         isDetectingLocation={isDetectingLocation}
         locationStatusMsg={locationStatusMsg}
         onDetectLocation={detectUserLocation}
-        onClearDetectedLocation={handleClearDetectedLocation}
-        mosqueName={mosqueName}
+        userLat={userCoords.lat}
+        userLon={userCoords.lon}
+        activeLocation={activeLocation}
+        hijriDateFormattedEn={hijriData.formattedEn}
+        hijriDateFormattedBn={hijriData.formattedBn}
+        nextPrayerName={nextPrayerNameStr}
+        nextPrayerTime={nextPrayerTimeStr}
+        sunriseTime={sunriseTimeStr}
+        minutesToNext={minutesToNext}
         onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
-        hijriAdjustment={hijriAdjustment}
-        onOpenArabicCalendar={() => setActiveTab('arabic')}
-        onOpenInstallHelp={() => setIsInstallHelpOpen(true)}
-      />
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Navigation View Switcher */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2 rounded-xl border border-stone-200 shadow-xs">
-          <div className="flex items-center gap-1.5">
-            <button
-              id="view-tab-daily"
-              onClick={() => setActiveTab('daily')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'daily'
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              <span>Daily Times &amp; Overview</span>
-            </button>
-
-            <button
-              id="view-tab-arabic"
-              onClick={() => setActiveTab('arabic')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'arabic'
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Moon className="w-3.5 h-3.5 text-amber-400" />
-              <span>Arabic Calendar (আরবী ক্যালেন্ডার)</span>
-            </button>
-
-            <button
-              id="view-tab-poster"
-              onClick={() => setActiveTab('poster')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'poster'
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5 text-amber-400" />
-              <span>Authentic Printed Calendar Poster (দাইমী সময়সূচী)</span>
-            </button>
-
-            <button
-              id="view-tab-all"
-              onClick={() => setActiveTab('all')}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === 'all'
-                  ? 'bg-emerald-800 text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Full Comprehensive View</span>
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              id="install-guide-tab-btn"
-              onClick={() => setIsInstallHelpOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors cursor-pointer"
-              title="ফোনে নিরাপদ ডাউনলোড ও ইনস্টল সহায়িকা"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>ইনস্টল ও নিরাপত্তা</span>
-            </button>
-
-            <div className="text-xs text-stone-500 hidden sm:flex items-center gap-2">
-              <span>Location:</span>
-              <span className="font-semibold text-stone-800 bg-stone-100 px-2 py-0.5 rounded-md border border-stone-200">
-                {activeLocation.name} ({activeLocation.offset >= 0 ? `+${activeLocation.offset}` : activeLocation.offset} min)
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* View Mode: Arabic / Hijri Calendar */}
-        {(activeTab === 'arabic' || activeTab === 'all') && (
-          <ArabicCalendarView
-            selectedDate={selectedDate}
-            onSelectDate={(newDate) => {
-              setSelectedDate(newDate);
-            }}
-            hijriAdjustment={hijriAdjustment}
-            onAdjustmentChange={handleHijriAdjustmentChange}
-          />
-        )}
-
-        {/* View Mode: Authentic Printed Calendar Poster */}
-        {(activeTab === 'poster' || activeTab === 'all') && (
-          <CalendarPosterView
-            selectedLocation={activeLocation}
-            use24Hour={use24Hour}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
-        )}
-
-        {/* View Mode: Daily Interactive Dashboard */}
-        {(activeTab === 'daily' || activeTab === 'all') && (
-          <>
-            {/* Current Active Prayer Spotlight */}
-            <CurrentPrayerCard
-              selectedLocation={activeLocation}
+        prayersChildren={
+          <div className="space-y-6 pb-20">
+            {/* Top Header */}
+            <Header
+              locations={locations}
+              selectedLocationId={selectedLocationId}
+              onSelectLocation={setSelectedLocationId}
+              customOffset={customOffset}
+              onCustomOffsetChange={setCustomOffset}
+              currentTimeStr={currentTimeStr}
+              use24Hour={use24Hour}
+              onToggle24Hour={() => setUse24Hour(!use24Hour)}
+              asrMethod={asrMethod}
+              onToggleAsrMethod={() => setAsrMethod(asrMethod === 'hanafi' ? 'shafii' : 'hanafi')}
+              onOpenDataModal={() => setIsDataModalOpen(true)}
               selectedDate={selectedDate}
-              onPrevDay={handlePrevDay}
-              onNextDay={handleNextDay}
-              onDateChange={setSelectedDate}
-              prayers={prayers}
-              nextPrayer={nextPrayer}
-              currentPrayer={currentPrayer}
-              minutesToNext={minutesToNext}
-              use24Hour={use24Hour}
-              hasUserOverride={hasUserOverride}
+              onSelectDate={setSelectedDate}
+              hasUserOverrideForDate={hasUserOverride}
               userCity={userCity}
-              mosqueName={mosqueName}
-              hijriAdjustment={hijriAdjustment}
-              onOpenArabicCalendar={() => setActiveTab('arabic')}
-            />
-
-            {/* 6 Prayer Cards for the Day */}
-            <DailyPrayerGrid
-              prayers={prayers}
-              selectedLocation={activeLocation}
-              use24Hour={use24Hour}
-              jamaatTimes={jamaatTimes}
+              isDetectingLocation={isDetectingLocation}
+              locationStatusMsg={locationStatusMsg}
+              onDetectLocation={detectUserLocation}
+              onClearDetectedLocation={handleClearDetectedLocation}
               mosqueName={mosqueName}
               onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
+              hijriAdjustment={hijriAdjustment}
+              onOpenArabicCalendar={() => setActiveTab('arabic')}
+              onOpenInstallHelp={() => setIsInstallHelpOpen(true)}
             />
 
-            {/* আমার মসজিদ সেটিং করার ফর্ম/বাটন */}
-            <div className="mt-4 p-5 bg-stone-800 rounded-xl text-white border border-stone-700 shadow-md">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                <div>
-                  <h3 className="font-bold text-base flex items-center gap-2">
-                    <span>🕌 আপনার মসজিদের জামাত সেটিং</span>
-                    {mosqueName && (
-                      <span className="text-xs font-normal text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                        সক্রিয়: {mosqueName}
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-xs text-stone-400 mt-0.5">
-                    ভারতীয় ১২-ঘণ্টা সময় (AM/PM) ফরম্যাটে প্রতিটি ওয়াক্তের জামাত সময় সেট করুন
+            {/* Navigation View Switcher */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-[#09332E] p-2.5 rounded-2xl border border-white/10 shadow-sm">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  id="view-tab-daily"
+                  onClick={() => setActiveTab('daily')}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === 'daily'
+                      ? 'bg-[#E2A336] text-[#03221F] shadow-sm'
+                      : 'text-[#90A8A3] hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>দৈনিক ওয়াক্ত ও ওভারভিউ</span>
+                </button>
+
+                <button
+                  id="view-tab-arabic"
+                  onClick={() => setActiveTab('arabic')}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === 'arabic'
+                      ? 'bg-[#E2A336] text-[#03221F] shadow-sm'
+                      : 'text-[#90A8A3] hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Moon className="w-3.5 h-3.5 text-amber-400" />
+                  <span>আরবী ক্যালেন্ডার</span>
+                </button>
+
+                <button
+                  id="view-tab-poster"
+                  onClick={() => setActiveTab('poster')}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === 'poster'
+                      ? 'bg-[#E2A336] text-[#03221F] shadow-sm'
+                      : 'text-[#90A8A3] hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <span>দাইমী সময়সূচী পোস্টার</span>
+                </button>
+
+                <button
+                  id="view-tab-all"
+                  onClick={() => setActiveTab('all')}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    activeTab === 'all'
+                      ? 'bg-[#E2A336] text-[#03221F] shadow-sm'
+                      : 'text-[#90A8A3] hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>সকল ভিউ</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  id="install-guide-tab-btn"
+                  onClick={() => setIsInstallHelpOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500/30 transition-colors cursor-pointer"
+                  title="ফোনে নিরাপদ ডাউনলোড ও ইনস্টল সহায়িকা"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>ইনস্টল ও নিরাপত্তা</span>
+                </button>
+              </div>
+            </div>
+
+            {/* View Mode: Arabic / Hijri Calendar */}
+            {(activeTab === 'arabic' || activeTab === 'all') && (
+              <ArabicCalendarView
+                selectedDate={selectedDate}
+                onSelectDate={(newDate) => {
+                  setSelectedDate(newDate);
+                }}
+                hijriAdjustment={hijriAdjustment}
+                onAdjustmentChange={handleHijriAdjustmentChange}
+              />
+            )}
+
+            {/* View Mode: Authentic Printed Calendar Poster */}
+            {(activeTab === 'poster' || activeTab === 'all') && (
+              <CalendarPosterView
+                selectedLocation={activeLocation}
+                use24Hour={use24Hour}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
+            )}
+
+            {/* View Mode: Daily Interactive Dashboard */}
+            {(activeTab === 'daily' || activeTab === 'all') && (
+              <>
+                {/* Current Active Prayer Spotlight */}
+                <CurrentPrayerCard
+                  selectedLocation={activeLocation}
+                  selectedDate={selectedDate}
+                  onPrevDay={handlePrevDay}
+                  onNextDay={handleNextDay}
+                  onDateChange={setSelectedDate}
+                  prayers={prayers}
+                  nextPrayer={nextPrayer}
+                  currentPrayer={currentPrayer}
+                  minutesToNext={minutesToNext}
+                  use24Hour={use24Hour}
+                  hasUserOverride={hasUserOverride}
+                  userCity={userCity}
+                  mosqueName={mosqueName}
+                  hijriAdjustment={hijriAdjustment}
+                  onOpenArabicCalendar={() => setActiveTab('arabic')}
+                />
+
+                {/* 6 Prayer Cards for the Day */}
+                <DailyPrayerGrid
+                  prayers={prayers}
+                  selectedLocation={activeLocation}
+                  use24Hour={use24Hour}
+                  jamaatTimes={jamaatTimes}
+                  mosqueName={mosqueName}
+                  onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
+                />
+
+                {/* আমার মসজিদ সেটিং করার ফর্ম */}
+                <div className="mt-4 p-5 bg-[#09332E] rounded-2xl text-white border border-white/10 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                      <h3 className="font-bold text-base flex items-center gap-2">
+                        <span>🕌 আপনার মসজিদের জামাত সেটিং</span>
+                        {mosqueName && (
+                          <span className="text-xs font-normal text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
+                            সক্রিয়: {mosqueName}
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-[#90A8A3] mt-0.5">
+                        ভারতীয় ১২-ঘণ্টা সময় (AM/PM) ফরম্যাটে প্রতিটি ওয়াক্তের জামাত সময় সেট করুন
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setJamaatTimes({
+                          Fajr: '05:15',
+                          Dhuhr: '13:15',
+                          Asr: '16:15',
+                          Maghrib: '17:35',
+                          Isha: '20:00',
+                        });
+                      }}
+                      className="px-2.5 py-1.5 text-xs font-medium text-amber-300 bg-amber-950/70 hover:bg-amber-900 border border-amber-800/80 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-xs"
+                      title="বরাক উপত্যকার আদর্শ ভারতীয় জামাতের সময়সূচী স্বয়ংক্রিয় পূরণ"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>আদর্শ ভারতীয় সময় পূরণ</span>
+                    </button>
+                  </div>
+                  
+                  <input 
+                    type="text" 
+                    placeholder="মসজিদের নাম লিখুন (যেমন: কোটামনি বাজার জামে মসজিদ)" 
+                    value={mosqueName} 
+                    onChange={(e) => setMosqueName(e.target.value)}
+                    className="p-2.5 rounded-lg bg-[#03221F] w-full mb-3 text-white border border-white/10 focus:border-[#E2A336] focus:outline-none text-sm placeholder-[#90A8A3]"
+                  />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-sm">
+                    {[
+                      { key: 'Fajr', label: 'Fajr জামাত', nameBn: 'ফজর', defaultAmPm: 'AM' as const },
+                      { key: 'Dhuhr', label: 'Dhuhr জামাত', nameBn: 'জোহর', defaultAmPm: 'PM' as const },
+                      { key: 'Asr', label: 'Asr জামাত', nameBn: 'আসর', defaultAmPm: 'PM' as const },
+                      { key: 'Maghrib', label: 'Maghrib জামাত', nameBn: 'মাগরিব', defaultAmPm: 'PM' as const },
+                      { key: 'Isha', label: 'Isha জামাত', nameBn: 'এশা', defaultAmPm: 'PM' as const },
+                    ].map((item) => (
+                      <IndianTimePicker
+                        key={item.key}
+                        label={item.label}
+                        nameBn={item.nameBn}
+                        value={jamaatTimes[item.key] || ''}
+                        defaultAmPm={item.defaultAmPm}
+                        onChange={(newVal) => setJamaatTimes((prev) => ({ ...prev, [item.key]: newVal }))}
+                      />
+                    ))}
+                  </div>
+
+                  {/* আজান চালু/বন্ধ করার অপশন ও টেস্ট বাটন ("জুদি কেহ চাই") */}
+                  <div className="mt-3.5 p-3.5 rounded-xl bg-[#03221F] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={playAzanOnJamaat}
+                        onChange={(e) => handleTogglePlayAzan(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-stone-800 border-stone-600 cursor-pointer"
+                      />
+                      <div>
+                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                          <Volume2 className="w-3.5 h-3.5 text-[#E2A336]" />
+                          <span>জামাতের সময়ে সুমধুর আযান দিন</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                              playAzanOnJamaat
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                : 'bg-stone-800 text-stone-400'
+                            }`}
+                          >
+                            {playAzanOnJamaat ? 'আযান চালু' : 'আযান বন্ধ'}
+                          </span>
+                        </span>
+                        <span className="text-[11px] text-[#90A8A3] block mt-0.5">
+                          ওয়াক্তের জামাত সময় উপস্থিত হলে পবিত্র মদিনা শরীফের আযান বাজবে (যদি চান চালু রাখুন)
+                        </span>
+                      </div>
+                    </label>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isAzanActive) {
+                            stopAzan();
+                            setIsAzanActive(false);
+                            setActiveJamaatAlert(null);
+                          } else {
+                            playAzan(1.0);
+                            setIsAzanActive(true);
+                          }
+                        }}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                          isAzanActive
+                            ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
+                            : 'bg-[#09332E] hover:bg-[#0C3E37] text-emerald-300 border-white/10'
+                        }`}
+                      >
+                        {isAzanActive ? (
+                          <>
+                            <Square className="w-3.5 h-3.5 fill-current" />
+                            <span>⏹ আযান বন্ধ করুন</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="w-3.5 h-3.5" />
+                            <span>▶ টেস্ট আযান শুনুন</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={() => saveMosqueSettings(mosqueName, jamaatTimes)}
+                    className="mt-4 bg-[#E2A336] px-4 py-2.5 rounded-xl text-[#03221F] font-bold hover:bg-yellow-400 transition-colors w-full cursor-pointer shadow-sm text-sm flex items-center justify-center gap-2"
+                  >
+                    <span>💾 সেভ করুন ও অ্যালার্ম চালু করুন</span>
+                  </button>
+                </div>
+
+                {/* Regional Location Comparison Matrix */}
+                <LocationComparison
+                  locations={locations}
+                  basePrayerTimes={basePrayerTimes}
+                  selectedLocationId={selectedLocationId}
+                  onSelectLocation={setSelectedLocationId}
+                  use24Hour={use24Hour}
+                />
+
+                {/* Fasting & Iftar Duas */}
+                <FastingDuaCard /> 
+                
+                {/* Timetable Calendar Table (with CSV & Print) */}
+                <TimetableTable
+                  timetable={timetable}
+                  selectedLocation={activeLocation}
+                  use24Hour={use24Hour}
+                  onSelectDate={setSelectedDate}
+                  selectedDate={selectedDate}
+                  asrMethod={asrMethod}
+                />
+              </>
+            )}
+
+            {/* Footer */}
+            <footer id="app-footer" className="bg-[#09332E] border border-white/10 mt-8 py-6 text-xs text-[#90A8A3] rounded-2xl p-4">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="text-center md:text-left space-y-1">
+                  <p className="font-semibold text-white">
+                    বরাক উপত্যকা ইসলামিক নামাজ ও রোজার স্থায়ী সময়সূচি
+                  </p>
+                  <p className="text-[#90A8A3]">
+                    ক্যাছাড় (Cachar), হাইলাকান্দি (Hailakandi) ও করিমগঞ্জ (Karimganj) • ১৬টি নির্বাচনী এলাকা
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setJamaatTimes({
-                      Fajr: '05:15',
-                      Dhuhr: '13:15',
-                      Asr: '16:15',
-                      Maghrib: '17:35',
-                      Isha: '20:00',
-                    });
-                  }}
-                  className="px-2.5 py-1.5 text-xs font-medium text-amber-300 bg-amber-950/70 hover:bg-amber-900 border border-amber-800/80 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-xs"
-                  title="বরাক উপত্যকার আদর্শ ভারতীয় জামাতের সময়সূচী স্বয়ংক্রিয় পূরণ"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>আদর্শ ভারতীয় সময় পূরণ</span>
-                </button>
-              </div>
-              
-              <input 
-                type="text" 
-                placeholder="মসজিদের নাম লিখুন (যেমন: কোটামনি বাজার জামে মসজিদ)" 
-                value={mosqueName} 
-                onChange={(e) => setMosqueName(e.target.value)}
-                className="p-2.5 rounded-lg bg-stone-700 w-full mb-3 text-white border border-stone-600 focus:border-emerald-500 focus:outline-none text-sm placeholder-stone-400"
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-sm">
-                {[
-                  { key: 'Fajr', label: 'Fajr জামাত', nameBn: 'ফজর', defaultAmPm: 'AM' as const },
-                  { key: 'Dhuhr', label: 'Dhuhr জামাত', nameBn: 'জোহর', defaultAmPm: 'PM' as const },
-                  { key: 'Asr', label: 'Asr জামাত', nameBn: 'আসর', defaultAmPm: 'PM' as const },
-                  { key: 'Maghrib', label: 'Maghrib জামাত', nameBn: 'মাগরিব', defaultAmPm: 'PM' as const },
-                  { key: 'Isha', label: 'Isha জামাত', nameBn: 'এশা', defaultAmPm: 'PM' as const },
-                ].map((item) => (
-                  <IndianTimePicker
-                    key={item.key}
-                    label={item.label}
-                    nameBn={item.nameBn}
-                    value={jamaatTimes[item.key] || ''}
-                    defaultAmPm={item.defaultAmPm}
-                    onChange={(newVal) => setJamaatTimes((prev) => ({ ...prev, [item.key]: newVal }))}
-                  />
-                ))}
-              </div>
-
-              {/* আজান চালু/বন্ধ করার অপশন ও টেস্ট বাটন ("জুদি কেহ চাই") */}
-              <div className="mt-3.5 p-3.5 rounded-xl bg-stone-900/80 border border-stone-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={playAzanOnJamaat}
-                    onChange={(e) => handleTogglePlayAzan(e.target.checked)}
-                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-stone-800 border-stone-600 cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>জামাতের সময়ে সুমধুর আযান দিন</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
-                          playAzanOnJamaat
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-stone-800 text-stone-400'
-                        }`}
-                      >
-                        {playAzanOnJamaat ? 'আযান চালু' : 'আযান বন্ধ'}
-                      </span>
-                    </span>
-                    <span className="text-[11px] text-stone-400 block mt-0.5">
-                      ওয়াক্তের জামাত সময় উপস্থিত হলে পবিত্র মদিনা শরীফের আযান বাজবে (যদি চান চালু রাখুন)
+                {/* Creator Attribution */}
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <div className="inline-flex items-center gap-2 bg-[#03221F] border border-[#E2A336]/30 px-4 py-2 rounded-xl text-white shadow-2xs">
+                    <span className="text-[#90A8A3] font-medium">অ্যাপটি তৈরি করেছেন:</span>
+                    <span className="font-bold text-[#E2A336] tracking-wide flex items-center gap-1.5">
+                      <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" />
+                      <span>Fahad Uddin (ফাহাদ উদ্দিন)</span>
                     </span>
                   </div>
-                </label>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isAzanActive) {
-                        stopAzan();
-                        setIsAzanActive(false);
-                        setActiveJamaatAlert(null);
-                      } else {
-                        playAzan(1.0);
-                        setIsAzanActive(true);
-                      }
-                    }}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                      isAzanActive
-                        ? 'bg-rose-600 text-white border-rose-500 animate-pulse'
-                        : 'bg-stone-800 hover:bg-stone-700 text-emerald-300 border-stone-600'
-                    }`}
-                  >
-                    {isAzanActive ? (
-                      <>
-                        <Square className="w-3.5 h-3.5 fill-current" />
-                        <span>⏹ আযান বন্ধ করুন</span>
-                      </>
-                    ) : (
-                      <>
-                        <Volume2 className="w-3.5 h-3.5" />
-                        <span>▶ টেস্ট আযান শুনুন</span>
-                      </>
-                    )}
-                  </button>
                 </div>
               </div>
-
-              <button 
-                onClick={() => saveMosqueSettings(mosqueName, jamaatTimes)}
-                className="mt-4 bg-emerald-600 px-4 py-2.5 rounded-lg text-white font-semibold hover:bg-emerald-500 transition-colors w-full cursor-pointer shadow-sm text-sm flex items-center justify-center gap-2"
-              >
-                <span>💾 সেভ করুন ও অ্যালার্ম চালু করুন</span>
-              </button>
-            </div>
-
-            {/* Regional Location Comparison Matrix */}
-            <LocationComparison
-              locations={locations}
-              basePrayerTimes={basePrayerTimes}
-              selectedLocationId={selectedLocationId}
-              onSelectLocation={setSelectedLocationId}
-              use24Hour={use24Hour}
-            />
-
-            {/* Fasting & Iftar Duas */}
-            <FastingDuaCard /> 
-            
-            {/* Timetable Calendar Table (with CSV & Print) */}
-            <TimetableTable
-              timetable={timetable}
-              selectedLocation={activeLocation}
-              use24Hour={use24Hour}
-              onSelectDate={setSelectedDate}
-              selectedDate={selectedDate}
-              asrMethod={asrMethod}
-            />
-          </>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer id="app-footer" className="bg-white border-t border-stone-200 mt-8 py-6 text-xs text-stone-600">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-center md:text-left space-y-1">
-            <p className="font-semibold text-stone-800">
-              বরাক উপত্যকা ইসলামিক নামাজ ও রোজার স্থায়ী সময়সূচি
-            </p>
-            <p className="text-stone-500">
-              ক্যাছাড় (Cachar), হাইলাকান্দি (Hailakandi) ও করিমগঞ্জ (Karimganj) • ১৬টি নির্বাচনী এলাকা
-            </p>
+            </footer>
           </div>
-
-          {/* Creator Attribution */}
-          <div className="flex flex-col sm:flex-row items-center gap-2">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-emerald-100/70 border border-emerald-300/80 px-4 py-2 rounded-xl text-emerald-950 shadow-2xs">
-              <span className="text-stone-600 font-medium">অ্যাপটি তৈরি করেছেন:</span>
-              <span className="font-bold text-emerald-900 tracking-wide flex items-center gap-1.5">
-                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" />
-                <span>Fahad Uddin (ফাহাদ উদ্দিন)</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      </footer>
+        }
+      />
 
       {/* Data Editor Modal */}
       <DataEditorModal
@@ -799,17 +828,17 @@ export default function App() {
 
       {/* Floating Active Azan / Jamaat Alert Banner */}
       {activeJamaatAlert && (
-        <div className="fixed bottom-5 right-5 left-5 sm:left-auto sm:w-96 z-50 bg-stone-900/95 backdrop-blur-md text-white p-4 rounded-2xl border border-emerald-500 shadow-2xl shadow-emerald-950/50 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4">
+        <div className="fixed bottom-16 right-5 left-5 sm:left-auto sm:w-96 z-50 bg-[#09332E] backdrop-blur-md text-white p-4 rounded-2xl border border-[#E2A336] shadow-2xl shadow-black/80 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
-              <Volume2 className="w-5 h-5 animate-pulse" />
+              <Volume2 className="w-5 h-5 animate-pulse text-[#E2A336]" />
             </div>
             <div>
               <h4 className="text-xs font-bold text-white">
                 🕌 {mosqueName ? `${mosqueName} - ` : ''}{activeJamaatAlert.prayer} জামাতের সময়!
               </h4>
-              <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <p className="text-[11px] text-[#E2A336] font-medium flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#E2A336] animate-ping"></span>
                 <span>সুমধুর আযান চলছে...</span>
               </p>
             </div>
@@ -827,6 +856,6 @@ export default function App() {
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 }
