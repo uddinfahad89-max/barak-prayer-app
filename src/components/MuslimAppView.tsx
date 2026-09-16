@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Plane,
   UserCheck,
+  HeartHandshake,
 } from 'lucide-react';
 import { QiblaModal } from './QiblaModal';
 import { TasbihModal } from './TasbihModal';
@@ -30,14 +31,15 @@ import { InspirationModal } from './InspirationModal';
 import { CampaignModal } from './CampaignModal';
 import { QuranView } from './QuranModal';
 import { UmmahView } from './UmmahView';
+import { ImamMatrimonyView } from './ImamMatrimonyView';
 import { ImamPortalModal } from './ImamPortalModal';
 import { LocationMeta, AppLanguage } from '../types';
 import { TRANSLATIONS, getPrayerName } from '../utils/translations';
 
 interface MuslimAppViewProps {
   // Navigation & Location
-  activeTab: 'home' | 'prayers' | 'quran' | 'ummah';
-  setActiveTab: (tab: 'home' | 'prayers' | 'quran' | 'ummah') => void;
+  activeTab: 'home' | 'prayers' | 'quran' | 'ummah' | 'matrimony';
+  setActiveTab: (tab: 'home' | 'prayers' | 'quran' | 'ummah' | 'matrimony') => void;
   userCity: string;
   isDetectingLocation: boolean;
   locationStatusMsg: string;
@@ -450,18 +452,18 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                   <span className="text-xs text-white font-medium">{t.mosque}</span>
                 </button>
 
-                {/* Feature 7: Imam Recruitment & Biodata Portal */}
+                {/* Feature 7: Imam Recruitment, Mosque & Matrimony Portal */}
                 <button
-                  onClick={() => setIsImamPortalOpen(true)}
-                  className="flex flex-col items-center gap-1.5 shrink-0 group"
+                  onClick={() => setActiveTab('matrimony')}
+                  className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
                 >
                   <div className="w-14 h-14 rounded-2xl bg-[#09332E] border border-[#E2A336]/30 group-hover:border-[#E2A336] flex items-center justify-center transition-all group-active:scale-95 shadow-md relative">
                     <div className="w-9 h-9 rounded-xl bg-[#E2A336]/20 flex items-center justify-center text-[#E2A336]">
-                      <UserCheck className="w-6 h-6" />
+                      <HeartHandshake className="w-6 h-6" />
                     </div>
                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#E2A336] ring-2 ring-[#03221F]" />
                   </div>
-                  <span className="text-xs text-[#E2A336] font-medium">{t.imamPortal}</span>
+                  <span className="text-xs text-[#E2A336] font-medium">{t.matrimony}</span>
                 </button>
               </div>
             </div>
@@ -471,21 +473,21 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
               <h3 className="text-base sm:text-lg font-bold text-white mb-3">{t.forYou}</h3>
 
               <div className="space-y-2.5">
-                {/* For You Item: Imam Recruitment & Mosque Vacancies */}
+                {/* For You Item: Imam Recruitment & Mosque Vacancies & Matrimony */}
                 <div
-                  onClick={() => setIsImamPortalOpen(true)}
+                  onClick={() => setActiveTab('matrimony')}
                   className="bg-gradient-to-r from-[#09332E] to-[#0c4038] hover:to-[#0e4940] border border-[#E2A336]/30 rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer transition-all active:scale-[0.99] group shadow-sm"
                 >
-                  <span className="text-xl shrink-0">🕌</span>
+                  <span className="text-xl shrink-0">💍</span>
                   <div className="flex-1">
                     <div className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
-                      <span>{t.imamPortal} ও মসজিদ বায়োডাটা</span>
+                      <span>{t.matrimony}: ইমাম নিযুক্তি ও পাত্র-পাত্রী</span>
                       <span className="text-[9px] px-1.5 py-0.2 bg-[#E2A336] text-[#03221F] font-bold rounded-full">
                         নতুন
                       </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-[#90A8A3] leading-snug mt-0.5">
-                      {t.imamPortalSubtitle}
+                      মসজিদের নিয়োগ, ইমামদের বায়োডাটা ও দ্বীনি পাত্র-পাত্রীর খোঁজ
                     </p>
                   </div>
                   <ChevronRight className={`w-4 h-4 text-[#E2A336] group-hover:translate-x-0.5 transition-transform shrink-0 ${lang === 'ur' ? 'rotate-180' : ''}`} />
@@ -569,20 +571,31 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
         {/* TAB 4: UMRAH & UMMAH */}
         {activeTab === 'ummah' && (
           <div className="animate-in fade-in duration-200">
-            <UmmahView onAddCoin={handleAddCoins} lang={lang} />
+            <UmmahView
+              onAddCoin={handleAddCoins}
+              lang={lang}
+              onNavigateToMatrimony={() => setActiveTab('matrimony')}
+            />
+          </div>
+        )}
+
+        {/* TAB 5: IMAM, MOSQUE & MATRIMONY (উমরাহ পরে) */}
+        {activeTab === 'matrimony' && (
+          <div className="animate-in fade-in duration-200">
+            <ImamMatrimonyView onAddCoin={handleAddCoins} lang={lang} />
           </div>
         )}
       </div>
 
       {/* Bottom Navigation Bar */}
       <nav
-        className="sticky bottom-0 z-40 w-full bg-[#09332E] border-t border-white/10 px-4 py-2 flex items-center justify-around shadow-2xl backdrop-blur-md"
+        className="sticky bottom-0 z-40 w-full bg-[#09332E] border-t border-white/10 px-2 sm:px-4 py-2 flex items-center justify-around shadow-2xl backdrop-blur-md"
         id="bottom-navigation-bar"
       >
         {/* Nav 1: Home */}
         <button
           onClick={() => setActiveTab('home')}
-          className={`flex flex-col items-center gap-1 transition-colors relative py-1 ${
+          className={`flex flex-col items-center gap-1 transition-colors relative py-1 cursor-pointer ${
             activeTab === 'home' ? 'text-[#E2A336]' : 'text-[#90A8A3] hover:text-white'
           }`}
         >
@@ -595,7 +608,7 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
         {/* Nav 2: Prayers */}
         <button
           onClick={() => setActiveTab('prayers')}
-          className={`flex flex-col items-center gap-1 transition-colors relative py-1 ${
+          className={`flex flex-col items-center gap-1 transition-colors relative py-1 cursor-pointer ${
             activeTab === 'prayers' ? 'text-[#E2A336]' : 'text-[#90A8A3] hover:text-white'
           }`}
         >
@@ -606,7 +619,7 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
         {/* Nav 3: Quran */}
         <button
           onClick={() => setActiveTab('quran')}
-          className={`flex flex-col items-center gap-1 transition-colors relative py-1 ${
+          className={`flex flex-col items-center gap-1 transition-colors relative py-1 cursor-pointer ${
             activeTab === 'quran' ? 'text-[#E2A336]' : 'text-[#90A8A3] hover:text-white'
           }`}
         >
@@ -617,7 +630,7 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
         {/* Nav 4: Umrah */}
         <button
           onClick={() => setActiveTab('ummah')}
-          className={`flex flex-col items-center gap-1 transition-colors relative py-1 ${
+          className={`flex flex-col items-center gap-1 transition-colors relative py-1 cursor-pointer ${
             activeTab === 'ummah' ? 'text-[#E2A336]' : 'text-[#90A8A3] hover:text-white'
           }`}
         >
@@ -627,6 +640,20 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-[#09332E]" />
           </div>
           <span className="text-[11px] font-semibold">{t.ummah}</span>
+        </button>
+
+        {/* Nav 5: Imam, Mosque & Matrimony (উমরাহ পরে একদম নিচে) */}
+        <button
+          onClick={() => setActiveTab('matrimony')}
+          className={`flex flex-col items-center gap-1 transition-colors relative py-1 cursor-pointer ${
+            activeTab === 'matrimony' ? 'text-[#E2A336]' : 'text-[#90A8A3] hover:text-white'
+          }`}
+        >
+          <div className="relative">
+            <HeartHandshake className={`w-5 h-5 ${activeTab === 'matrimony' ? 'text-[#E2A336]' : ''}`} />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#E2A336] ring-2 ring-[#09332E]" />
+          </div>
+          <span className="text-[11px] font-semibold whitespace-nowrap">{t.matrimony}</span>
         </button>
       </nav>
 

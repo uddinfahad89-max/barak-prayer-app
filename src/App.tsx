@@ -55,7 +55,7 @@ export default function App() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'daily' | 'arabic' | 'poster' | 'all'>('daily');
-  const [mainNavTab, setMainNavTab] = useState<'home' | 'prayers' | 'quran' | 'ummah'>('home');
+  const [mainNavTab, setMainNavTab] = useState<'home' | 'prayers' | 'quran' | 'ummah' | 'matrimony'>('home');
   const [appLang, setAppLang] = useState<AppLanguage>(() => {
     try {
       const saved = localStorage.getItem('muslim_app_lang');

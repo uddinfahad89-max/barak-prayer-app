@@ -6,6 +6,7 @@ export interface Translations {
   prayers: string;
   quran: string;
   ummah: string;
+  matrimony: string;
 
   // Header & Profile
   language: string;
@@ -89,6 +90,7 @@ export const TRANSLATIONS: Record<AppLanguage, Translations> = {
     prayers: 'Prayers',
     quran: 'Quran',
     ummah: 'Umrah',
+    matrimony: 'Imam & Nikah',
 
     language: 'Language',
     coins: 'Coins',
@@ -163,6 +165,7 @@ export const TRANSLATIONS: Record<AppLanguage, Translations> = {
     prayers: 'نمازیں',
     quran: 'قرآن',
     ummah: 'عمرہ',
+    matrimony: 'امام و نکاح',
 
     language: 'زبان',
     coins: 'سکے',
@@ -237,6 +240,7 @@ export const TRANSLATIONS: Record<AppLanguage, Translations> = {
     prayers: 'নামাজ',
     quran: 'কুরআন',
     ummah: 'উমরাহ',
+    matrimony: 'ইমাম ও নিকাহ',
 
     language: 'ভাষা',
     coins: 'কয়েন',

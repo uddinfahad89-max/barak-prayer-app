@@ -135,3 +135,31 @@ export interface MosqueVacancy {
   isCustomSubmission?: boolean;
 }
 
+export interface MatrimonyBiodata {
+  id: string;
+  type: 'groom' | 'bride'; // পাত্র (Groom) নাকি পাত্রী (Bride)
+  codeName: string; // e.g., 'B-101' বা নাম
+  fullName: string;
+  age: number;
+  height: string; // e.g., "5' 8\"", "5' 2\""
+  complexion: string; // e.g., 'ফর্সা', 'উজ্জ্বল শ্যামলা'
+  maritalStatus: 'অবিবাহিত' | 'ডিভোর্সড' | 'বিধবা' | 'বিপত্নীক';
+  education: string; // e.g., 'বি.এসসি কম্পিউটার সায়েন্স' / 'ফাযিল ও আলেমা'
+  profession: string; // e.g., 'সরকারি শিক্ষক', 'সফটওয়্যার ইঞ্জিনিয়ার', 'মাদ্রাসা শিক্ষিকা', 'গৃহিণী'
+  monthlyIncome?: string; // e.g., '₹৪৫,০০০ / মাস'
+  religiousPractices: string[]; // e.g., '৫ ওয়াক্ত নামাজি', 'সুন্নতি দাড়ি', 'সম্পূর্ণ পর্দনশীন (নিকাব)'
+  fatherOccupation: string;
+  district: string; // e.g., 'কাছাড়', 'করিমগঞ্জ', 'হাইলাকান্দি'
+  area: string; // e.g., 'শিলচর শহর', 'বদরপুর'
+  familyType: string; // e.g., 'দ্বীনদার সুন্নি পরিবার'
+  partnerExpectations: string; // প্রত্যাশিত জীবনসঙ্গীর গুণাবলী
+  guardianRelation: string; // e.g., 'পিতা', 'অভিভাবক (বড় ভাই)'
+  guardianPhone: string;
+  whatsappNumber: string;
+  bioNotes: string;
+  createdAt: number;
+  isVerified?: boolean;
+  isCustomSubmission?: boolean;
+}
+
+

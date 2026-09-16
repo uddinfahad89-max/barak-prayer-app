@@ -23,6 +23,8 @@ import {
   Info,
   Check,
   UserCheck,
+  HeartHandshake,
+  User,
 } from 'lucide-react';
 import { UmrahPackage, UmrahCategory, AppLanguage } from '../types';
 import { DEFAULT_UMRAH_PACKAGES } from '../data/defaultUmrahPackages';
@@ -73,9 +75,14 @@ const INITIAL_DUAS: DuaRequest[] = [
 interface UmmahViewProps {
   onAddCoin: (amount: number) => void;
   lang?: AppLanguage;
+  onNavigateToMatrimony?: () => void;
 }
 
-export const UmmahView: React.FC<UmmahViewProps> = ({ onAddCoin, lang = 'bn' }) => {
+export const UmmahView: React.FC<UmmahViewProps> = ({
+  onAddCoin,
+  lang = 'bn',
+  onNavigateToMatrimony,
+}) => {
   // Main Sub-Tab: 'umrah' vs 'duas'
   const [activeSubTab, setActiveSubTab] = useState<'umrah' | 'duas'>('umrah');
 
@@ -260,16 +267,8 @@ export const UmmahView: React.FC<UmmahViewProps> = ({ onAddCoin, lang = 'bn' }) 
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsImamPortalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-95 shrink-0 cursor-pointer border border-emerald-600/40"
-            >
-              <UserCheck className="w-4 h-4 text-[#E2A336]" />
-              <span>ইমাম নিযুক্তি পোর্টাল</span>
-            </button>
-
-            <button
               onClick={() => setIsFormModalOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>এজেন্সির প্যাকেজ যোগ করুন</span>
@@ -277,41 +276,11 @@ export const UmmahView: React.FC<UmmahViewProps> = ({ onAddCoin, lang = 'bn' }) 
           </div>
         </div>
 
-        {/* Imam & Mosque Vacancies Featured Banner */}
-        <div
-          onClick={() => setIsImamPortalOpen(true)}
-          className="mt-3.5 bg-gradient-to-r from-[#072f29] via-[#093a33] to-[#062924] border border-[#E2A336]/40 hover:border-[#E2A336] rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 shadow-md cursor-pointer transition-all hover:shadow-xl active:scale-[0.99] group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#E2A336]/20 border border-[#E2A336]/40 flex items-center justify-center text-[#E2A336] shrink-0 font-bold">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#E2A336] transition-colors">
-                  🕌 ইমাম নিযুক্তি ও মসজিদ কমিটির নিয়োগ পোর্টাল
-                </h4>
-                <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-[#E2A336] text-[#03221F]">
-                  নতুন সেবা
-                </span>
-              </div>
-              <p className="text-[11px] text-emerald-300/80 mt-0.5">
-                ইমাম সাহেবরা নিজের বায়োডাটা দিতে পারবেন এবং মসজিদ কমিটি নিয়োগ বিজ্ঞপ্তি পোস্ট করতে পারবেন
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#E2A336] group-hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs shrink-0 shadow-xs transition-colors">
-            <span>খুলুন</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </div>
-        </div>
-
-        {/* Sub-Tabs: Umrah Packages vs Imam Portal vs Dua Wall */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 pt-3 border-t border-emerald-800/60">
+        {/* Sub-Tabs: Umrah Packages vs Dua Wall */}
+        <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-emerald-800/60">
           <button
             onClick={() => setActiveSubTab('umrah')}
-            className={`py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+            className={`py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeSubTab === 'umrah'
                 ? 'bg-[#E2A336] text-[#03221F] shadow-md'
                 : 'bg-[#03221F]/60 text-emerald-300 hover:bg-emerald-900/40 border border-emerald-800/40'
@@ -322,16 +291,8 @@ export const UmmahView: React.FC<UmmahViewProps> = ({ onAddCoin, lang = 'bn' }) 
           </button>
 
           <button
-            onClick={() => setIsImamPortalOpen(true)}
-            className="py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 bg-[#03221F]/60 text-emerald-200 hover:text-white hover:bg-emerald-900/40 border border-[#E2A336]/40 hover:border-[#E2A336]"
-          >
-            <UserCheck className="w-3.5 h-3.5 text-[#E2A336]" />
-            <span className="truncate">ইমাম নিযুক্তি পোর্টাল ✨</span>
-          </button>
-
-          <button
             onClick={() => setActiveSubTab('duas')}
-            className={`col-span-2 sm:col-span-1 py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 ${
+            className={`py-2 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeSubTab === 'duas'
                 ? 'bg-[#E2A336] text-[#03221F] shadow-md'
                 : 'bg-[#03221F]/60 text-emerald-300 hover:bg-emerald-900/40 border border-emerald-800/40'
@@ -671,6 +632,124 @@ export const UmmahView: React.FC<UmmahViewProps> = ({ onAddCoin, lang = 'bn' }) 
                 </button>
               </div>
             )}
+          </div>
+
+          {/* ===================== IMAM, MOSQUE & MATRIMONY SECTION (উমরাহ প্যাকেজগুলোর একদম নিচে) ===================== */}
+          <div className="mt-8 pt-6 border-t border-emerald-800/80 space-y-4">
+            <div className="bg-gradient-to-br from-[#09332E] via-[#0b3c36] to-[#062420] border border-[#E2A336]/40 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-[#E2A336]/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-[#E2A336]/20 border border-[#E2A336]/40 flex items-center justify-center text-[#E2A336] shrink-0 font-bold">
+                    <HeartHandshake className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
+                        ইমাম নিযুক্তি, মসজিদ ও দ্বীনি পাত্র-পাত্রী পোর্টাল
+                      </h3>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#E2A336] text-[#03221F]">
+                        নতুন সেবা
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-200/90 mt-0.5">
+                      উমরাহের পর দ্বীনি উম্মাহর সেবায় ইমাম নিযুক্তি এবং শরীয়াহসম্মত সুন্নতি বিবাহের বায়োডাটা
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onNavigateToMatrimony) onNavigateToMatrimony();
+                    else setIsImamPortalOpen(true);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <span>সম্পূর্ণ পোর্টাল খুলুন</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* 3 Direct Feature Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 relative z-10">
+                {/* Card 1: Matrimony (পাত্র-পাত্রী) */}
+                <div
+                  onClick={() => {
+                    if (onNavigateToMatrimony) onNavigateToMatrimony();
+                    else setIsImamPortalOpen(true);
+                  }}
+                  className="bg-[#03221F]/80 hover:bg-[#03221F] border border-emerald-700/60 hover:border-[#E2A336] p-3.5 rounded-xl cursor-pointer transition-all shadow-sm group"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-300 flex items-center justify-center">
+                      <HeartHandshake className="w-4 h-4" />
+                    </div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors">
+                      দ্বীনি পাত্র-পাত্রী (নিকাহ)
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-emerald-300/80 leading-snug">
+                    বর ও কনের শরীয়াহসম্মত ইসলামিক বায়োডাটা ও অভিভাবকদের সাথে যোগাযোগ
+                  </p>
+                  <div className="mt-2.5 pt-2 border-t border-emerald-800/40 flex items-center justify-between text-[11px] text-[#E2A336] font-bold">
+                    <span>বায়োডাটা দেখুন</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Card 2: Mosque Vacancies */}
+                <div
+                  onClick={() => {
+                    if (onNavigateToMatrimony) onNavigateToMatrimony();
+                    else setIsImamPortalOpen(true);
+                  }}
+                  className="bg-[#03221F]/80 hover:bg-[#03221F] border border-emerald-700/60 hover:border-[#E2A336] p-3.5 rounded-xl cursor-pointer transition-all shadow-sm group"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors">
+                      মসজিদের নিয়োগ বিজ্ঞপ্তি
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-emerald-300/80 leading-snug">
+                    মসজিদ কমিটির জন্য যোগ্য খতীব, ইমাম, মুয়াজ্জিন ও শিক্ষক নিযুক্তি
+                  </p>
+                  <div className="mt-2.5 pt-2 border-t border-emerald-800/40 flex items-center justify-between text-[11px] text-[#E2A336] font-bold">
+                    <span>বিজ্ঞপ্তি দেখুন</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+
+                {/* Card 3: Imam Biodatas */}
+                <div
+                  onClick={() => {
+                    if (onNavigateToMatrimony) onNavigateToMatrimony();
+                    else setIsImamPortalOpen(true);
+                  }}
+                  className="bg-[#03221F]/80 hover:bg-[#03221F] border border-emerald-700/60 hover:border-[#E2A336] p-3.5 rounded-xl cursor-pointer transition-all shadow-sm group"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-300 flex items-center justify-center">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors">
+                      ইমাম সাহেবের বায়োডাটা
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-emerald-300/80 leading-snug">
+                    হাফেজ ও আলেম সাহেবদের মসজিদের খেদমতের আবেদন ও বায়োডাটা
+                  </p>
+                  <div className="mt-2.5 pt-2 border-t border-emerald-800/40 flex items-center justify-between text-[11px] text-[#E2A336] font-bold">
+                    <span>বায়োডাটা দেখুন</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
