@@ -1,5 +1,6 @@
 import { PrayerKey, PrayerTimetableItem, PrayerDisplayInfo } from '../types';
 import { PRAYER_METADATA } from '../data/defaultData';
+import { Coordinates, CalculationMethod, Madhab, PrayerTimes } from 'adhan';
 
 /**
  * Converts HH:MM string to total minutes from midnight.
@@ -176,6 +177,46 @@ export function getBasePrayerTimesForDate(
     return timetable[key];
   }
   return calculateAstronomicalTimes(date, asrSchool);
+}
+
+/**
+ * Calculates authentic India-wide prayer times matching Google's algorithm.
+ * Uses University of Islamic Sciences, Karachi method with exact coordinates
+ * in Indian Standard Time (IST).
+ */
+export function calculateGooglePrayerTimesForLocation(
+  lat: number,
+  lon: number,
+  date: Date,
+  asrSchool: 'hanafi' | 'shafii' = 'hanafi'
+): PrayerTimetableItem {
+  try {
+    const coords = new Coordinates(lat, lon);
+    const params = CalculationMethod.Karachi();
+    params.madhab = asrSchool === 'shafii' ? Madhab.Shafi : Madhab.Hanafi;
+    const pt = new PrayerTimes(coords, date, params);
+
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const formatTime = (d?: Date | null): string => {
+      if (!d || isNaN(d.getTime())) return '05:00';
+      // Format to Indian Standard Time (UTC+5:30)
+      const istOffsetMs = 5.5 * 60 * 60 * 1000;
+      const istDate = new Date(d.getTime() + (d.getTimezoneOffset() * 60000) + istOffsetMs);
+      return `${pad(istDate.getHours())}:${pad(istDate.getMinutes())}`;
+    };
+
+    return {
+      sehri_end: formatTime(pt.fajr),
+      sunrise: formatTime(pt.sunrise),
+      dhuhr: formatTime(pt.dhuhr),
+      asr: formatTime(pt.asr),
+      maghrib: formatTime(pt.maghrib),
+      isha: formatTime(pt.isha),
+    };
+  } catch (err) {
+    console.error('Failed to compute Google prayer times for coordinates:', lat, lon, err);
+    return calculateAstronomicalTimes(date, asrSchool);
+  }
 }
 
 /**

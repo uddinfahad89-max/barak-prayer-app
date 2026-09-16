@@ -29,6 +29,7 @@ interface HeaderProps {
   hijriAdjustment?: number;
   onOpenArabicCalendar?: () => void;
   onOpenInstallHelp?: () => void;
+  onOpenLocationPicker?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -56,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
   hijriAdjustment = 0,
   onOpenArabicCalendar,
   onOpenInstallHelp,
+  onOpenLocationPicker,
 }) => {
   const [districtFilter, setDistrictFilter] = useState<'all' | 'Cachar' | 'Hailakandi' | 'Karimganj'>('all');
 
@@ -199,6 +201,23 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* Location Picker (Barak Valley & All India) */}
+          {onOpenLocationPicker && (
+            <button
+              id="open-location-picker-btn"
+              onClick={onOpenLocationPicker}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+              title="স্থান বেছে নিন: বরাক উপত্যকার আসল সময় বা ভারতের যে কোন শহর"
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>
+                {selectedLoc.isBarakValley || selectedLoc.district?.toLowerCase() === 'cachar' || selectedLoc.district?.toLowerCase() === 'hailakandi' || selectedLoc.district?.toLowerCase() === 'karimganj'
+                  ? `🌿 ${selectedLoc.name}`
+                  : `🇮🇳 ${selectedLoc.name}`}
+              </span>
+            </button>
+          )}
+
           {/* JSON Data & Configuration */}
           <button
             id="open-data-modal-btn"
@@ -233,12 +252,46 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* District & Location Selector Bar */}
       <div className="bg-emerald-900/60 border-t border-emerald-800/60 px-4 sm:px-6 py-2.5 space-y-2">
+        {/* If an All-India city outside Barak Valley is active */}
+        {selectedLoc && !selectedLoc.isBarakValley && !['cachar', 'hailakandi', 'karimganj'].includes(selectedLoc.district?.toLowerCase() || '') && selectedLoc.id !== 'custom' ? (
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-950/80 border border-amber-500/40 rounded-xl px-3.5 py-2">
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-emerald-950 font-bold text-[10px]">
+                🇮🇳 গুগল পদ্ধতি • Google Method
+              </span>
+              <span className="font-bold text-white text-sm">
+                {selectedLoc.name} {selectedLoc.nameBn ? `(${selectedLoc.nameBn})` : ''}
+              </span>
+              <span className="text-emerald-300/80">
+                • {selectedLoc.state} ({selectedLoc.lat?.toFixed(2)}°N, {selectedLoc.lon?.toFixed(2)}°E)
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => onSelectLocation('silchar')}
+                className="px-2.5 py-1 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-emerald-100 text-xs font-semibold transition-colors flex items-center gap-1"
+                title="বরাক উপত্যকার সময়সূচীতে ফিরে যান"
+              >
+                <span>🌿 বরাক উপত্যকায় যান</span>
+              </button>
+              {onOpenLocationPicker && (
+                <button
+                  onClick={onOpenLocationPicker}
+                  className="px-2.5 py-1 rounded-lg bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] text-xs font-bold transition-colors"
+                >
+                  শহর পরিবর্তন
+                </button>
+              )}
+            </div>
+          </div>
+        ) : null}
+
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           {/* District filter badges */}
-          <div className="flex items-center gap-1.5 text-xs">
+          <div className="flex items-center gap-1.5 text-xs flex-wrap">
             <span className="text-emerald-300 font-medium flex items-center gap-1 shrink-0 mr-1">
               <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              District:
+              Barak Valley:
             </span>
             <button
               id="filter-district-all"
@@ -284,6 +337,15 @@ export const Header: React.FC<HeaderProps> = ({
             >
               Karimganj (করিমগঞ্জ)
             </button>
+            {onOpenLocationPicker && (
+              <button
+                onClick={onOpenLocationPicker}
+                className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#E2A336]/20 hover:bg-[#E2A336]/30 text-amber-200 border border-[#E2A336]/40 transition-colors flex items-center gap-1 ml-1"
+                title="ভারতের যে কোন শহরের জন্য গুগল সময় দেখুন"
+              >
+                <span>🇮🇳 পুরা ভারত (Google)</span>
+              </button>
+            )}
           </div>
 
           {/* Quick Date Shortcuts */}

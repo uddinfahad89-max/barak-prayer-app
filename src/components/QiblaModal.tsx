@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Compass, X, Navigation, MapPin, CheckCircle2 } from 'lucide-react';
 import { calculateQiblaBearing, calculateDistanceToMakkah } from '../utils/geoDetect';
+import { AppLanguage } from '../types';
 
 interface QiblaModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface QiblaModalProps {
   userLat?: number | null;
   userLon?: number | null;
   userCity?: string;
+  lang?: AppLanguage;
 }
 
 export const QiblaModal: React.FC<QiblaModalProps> = ({
@@ -16,6 +18,7 @@ export const QiblaModal: React.FC<QiblaModalProps> = ({
   userLat,
   userLon,
   userCity,
+  lang = 'en',
 }) => {
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const [hasCompassSupport, setHasCompassSupport] = useState<boolean>(false);
@@ -82,10 +85,12 @@ export const QiblaModal: React.FC<QiblaModalProps> = ({
         {/* Title */}
         <div className="flex items-center gap-2 mb-1">
           <Compass className="w-6 h-6 text-[#E2A336]" />
-          <h2 className="text-xl font-bold text-white tracking-wide">ক্বিবলা কম্পাস (Qibla)</h2>
+          <h2 className="text-xl font-bold text-white tracking-wide">
+            {lang === 'ur' ? 'قبلہ کمپاس' : lang === 'bn' ? 'ক্বিবলা কম্পাস (Qibla)' : 'Qibla Direction Compass'}
+          </h2>
         </div>
         <p className="text-xs text-[#90A8A3] mb-6 text-center">
-          পবিত্র কাবা শরীফ (মক্কা মুকাররমা)-এর সঠিক দিকনির্দেশনা
+          {lang === 'ur' ? 'مکہ مکرمہ، خانہ کعبہ کی سمت کی درست رہنمائی' : lang === 'bn' ? 'পবিত্র কাবা শরীফ (মক্কা মুকাররমা)-এর সঠিক দিকনির্দেশনা' : 'Accurate direction towards the Holy Kaaba in Makkah'}
         </p>
 
         {/* Compass Dial */}
@@ -97,10 +102,10 @@ export const QiblaModal: React.FC<QiblaModalProps> = ({
             <div className="absolute inset-4 rounded-full border border-dashed border-[#E2A336]/20" />
 
             {/* Cardinal Marks */}
-            <span className="absolute top-2 text-xs font-bold text-[#E2A336]">N (০°)</span>
-            <span className="absolute right-2 text-xs font-semibold text-[#90A8A3]">E (৯০°)</span>
-            <span className="absolute bottom-2 text-xs font-semibold text-[#90A8A3]">S (১৮০°)</span>
-            <span className="absolute left-2 text-xs font-semibold text-[#90A8A3]">W (২৭০°)</span>
+            <span className="absolute top-2 text-xs font-bold text-[#E2A336]">N (0°)</span>
+            <span className="absolute right-2 text-xs font-semibold text-[#90A8A3]">E (90°)</span>
+            <span className="absolute bottom-2 text-xs font-semibold text-[#90A8A3]">S (180°)</span>
+            <span className="absolute left-2 text-xs font-semibold text-[#90A8A3]">W (270°)</span>
           </div>
 
           {/* Rotating Dial / Needle */}
@@ -134,11 +139,13 @@ export const QiblaModal: React.FC<QiblaModalProps> = ({
           {isAligned ? (
             <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold">
               <CheckCircle2 className="w-4 h-4" />
-              <span>আপনি ক্বিবলার সঠিক অভিমুখে আছেন!</span>
+              <span>
+                {lang === 'ur' ? 'آپ بالکل درست سمتِ قبلہ پر ہیں!' : lang === 'bn' ? 'আপনি ক্বিবলার সঠিক অভিমুখে আছেন!' : 'You are directly facing the Holy Qibla!'}
+              </span>
             </div>
           ) : (
             <div className="px-3 py-1 rounded-full bg-white/5 text-[#90A8A3] text-xs">
-              মোবাইল ঘুরিয়ে তীরচিহ্ন সোজা করুন
+              {lang === 'ur' ? 'درست سمت کے لیے فون گھمائیں' : lang === 'bn' ? 'মোবাইল ঘুরিয়ে তীরচিহ্ন সোজা করুন' : 'Rotate phone until arrow aligns with Kaaba'}
             </div>
           )}
         </div>
@@ -146,22 +153,35 @@ export const QiblaModal: React.FC<QiblaModalProps> = ({
         {/* Angle and Details Info Cards */}
         <div className="grid grid-cols-2 gap-3 w-full mt-6">
           <div className="bg-[#03221F] p-3 rounded-xl border border-white/5 text-center">
-            <span className="text-[11px] text-[#90A8A3] block mb-0.5">ক্বিবলার কোণ</span>
+            <span className="text-[11px] text-[#90A8A3] block mb-0.5">
+              {lang === 'ur' ? 'زاویۂ قبلہ' : lang === 'bn' ? 'ক্বিবলার কোণ' : 'Qibla Bearing'}
+            </span>
             <span className="text-xl font-extrabold text-[#E2A336]">{qiblaAngle}°</span>
-            <span className="text-[10px] text-[#90A8A3] block mt-0.5">উত্তর থেকে পশ্চিম-দক্ষিণ</span>
+            <span className="text-[10px] text-[#90A8A3] block mt-0.5">
+              {lang === 'ur' ? 'شمال تا مغرب-جنوب' : lang === 'bn' ? 'উত্তর থেকে পশ্চিম-দক্ষিণ' : 'North to West-South'}
+            </span>
           </div>
 
           <div className="bg-[#03221F] p-3 rounded-xl border border-white/5 text-center">
-            <span className="text-[11px] text-[#90A8A3] block mb-0.5">মক্কার দূরত্ব</span>
-            <span className="text-xl font-extrabold text-white">{distanceKm.toLocaleString('bn-BD')}</span>
-            <span className="text-[10px] text-[#90A8A3] block mt-0.5">কিলোমিটার</span>
+            <span className="text-[11px] text-[#90A8A3] block mb-0.5">
+              {lang === 'ur' ? 'مکہ کا فاصلہ' : lang === 'bn' ? 'মক্কার দূরত্ব' : 'Distance to Makkah'}
+            </span>
+            <span className="text-xl font-extrabold text-white">
+              {lang === 'bn' ? distanceKm.toLocaleString('bn-BD') : distanceKm.toLocaleString('en-US')}
+            </span>
+            <span className="text-[10px] text-[#90A8A3] block mt-0.5">
+              {lang === 'ur' ? 'کلومیٹر' : lang === 'bn' ? 'কিলোমিটার' : 'km'}
+            </span>
           </div>
         </div>
 
         {/* Location Footer Note */}
         <div className="mt-4 flex items-center gap-1.5 text-xs text-[#90A8A3]">
           <MapPin className="w-3.5 h-3.5 text-[#E2A336]" />
-          <span>আপনার বর্তমান স্থান: <strong className="text-white">{userCity || 'শনাক্তকৃত অবস্থান'}</strong></span>
+          <span>
+            {lang === 'ur' ? 'مقام: ' : lang === 'bn' ? 'আপনার বর্তমান স্থান: ' : 'Your location: '}
+            <strong className="text-white">{userCity || (lang === 'ur' ? 'موجودہ مقام' : lang === 'bn' ? 'শনাক্তকৃত অবস্থান' : 'Detected location')}</strong>
+          </span>
         </div>
 
         {!hasCompassSupport && (

@@ -4,9 +4,11 @@ import {
   DEFAULT_TIMETABLE,
   LOCATION_DETAILS,
 } from './data/defaultData';
-import { LocationOffsets, TimetableData, LocationMeta, JamaatTimes } from './types';
+import { LocationOffsets, TimetableData, LocationMeta, JamaatTimes, AppLanguage } from './types';
+import { ALL_INDIA_LOCATIONS } from './data/allIndiaLocations';
 import {
   getBasePrayerTimesForDate,
+  calculateGooglePrayerTimesForLocation,
   computeDayPrayerTimes,
   formatDateKey,
 } from './utils/prayerCalc';
@@ -14,6 +16,7 @@ import {
   findClosestConstituency,
   matchConstituencyByAddressText,
   reverseGeocodeCity,
+  isWithinBarakValley,
 } from './utils/geoDetect';
 import { calculateHijriFromDate } from './utils/hijriCalendar';
 import { MuslimAppView } from './components/MuslimAppView';
@@ -28,6 +31,7 @@ import { CalendarPosterView } from './components/CalendarPosterView';
 import { MosqueSettingsModal } from './components/MosqueSettingsModal';
 import { ArabicCalendarView } from './components/ArabicCalendarView';
 import { InstallHelpModal } from './components/InstallHelpModal';
+import { LocationPickerModal } from './components/LocationPickerModal';
 import { IndianTimePicker } from './components/IndianTimePicker';
 import { playPrayerChime, playAzan, stopAzan, setAzanEndCallback } from './utils/audioAlert';
 import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck, Smartphone, Volume2, Square, Heart } from 'lucide-react';
@@ -40,6 +44,8 @@ export default function App() {
   // UI state
   const [selectedLocationId, setSelectedLocationId] = useState<string>('silchar');
   const [customOffset, setCustomOffset] = useState<number>(0);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState<boolean>(false);
+  const [detectedCustomLocation, setDetectedCustomLocation] = useState<LocationMeta | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [use24Hour, setUse24Hour] = useState<boolean>(false);
   const [asrMethod, setAsrMethod] = useState<'hanafi' | 'shafii'>('hanafi');
@@ -50,6 +56,25 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'daily' | 'arabic' | 'poster' | 'all'>('daily');
   const [mainNavTab, setMainNavTab] = useState<'home' | 'prayers' | 'quran' | 'ummah'>('home');
+  const [appLang, setAppLang] = useState<AppLanguage>(() => {
+    try {
+      const saved = localStorage.getItem('muslim_app_lang');
+      if (saved === 'ur' || saved === 'en' || saved === 'bn') return saved as AppLanguage;
+    } catch {
+      // ignore
+    }
+    return 'en';
+  });
+
+  const handleSelectLang = (newLang: AppLanguage) => {
+    setAppLang(newLang);
+    try {
+      localStorage.setItem('muslim_app_lang', newLang);
+    } catch {
+      // ignore
+    }
+  };
+
   const [userCoords, setUserCoords] = useState<{ lat: number | null; lon: number | null }>({
     lat: null,
     lon: null,
@@ -225,20 +250,50 @@ export default function App() {
         const city = data.city || data.region || 'আপনার অঞ্চল';
         setUserCity(city);
         if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
-          const { constituency, distanceKm } = findClosestConstituency(data.latitude, data.longitude);
-          if (distanceKm <= 80) {
-            setSelectedLocationId(constituency.id);
-            setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (${constituency.nameBn} বিধানসভা)`);
-            return;
+          if (isWithinBarakValley(data.latitude, data.longitude)) {
+            const { constituency, distanceKm } = findClosestConstituency(data.latitude, data.longitude);
+            if (distanceKm <= 80) {
+              setSelectedLocationId(constituency.id);
+              setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (${constituency.nameBn} বিধানসভা • বরাক উপত্যকা)`);
+              return;
+            }
+          } else {
+            // Outside Barak Valley -> All India city
+            const matchIndia = ALL_INDIA_LOCATIONS.find(
+              (loc) =>
+                loc.name.toLowerCase() === city.toLowerCase() ||
+                (loc.district && loc.district.toLowerCase() === city.toLowerCase())
+            );
+            if (matchIndia) {
+              setSelectedLocationId(matchIndia.id);
+              setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${matchIndia.name} (গুগল পদ্ধতি)`);
+              return;
+            } else {
+              const customLoc: LocationMeta = {
+                id: 'gps_detected',
+                name: city,
+                district: data.region || '',
+                state: data.region || 'India',
+                offset: 0,
+                lat: data.latitude,
+                lon: data.longitude,
+                isBarakValley: false,
+                description: `${city} (Google Method)`,
+              };
+              setDetectedCustomLocation(customLoc);
+              setSelectedLocationId('gps_detected');
+              setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (গুগল পদ্ধতি)`);
+              return;
+            }
           }
         }
-        setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (শিলচর বেস সময়)`);
+        setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city}`);
         return;
       }
     } catch {
       // Network or CORS issue, handled gracefully
     }
-    setLocationStatusMsg('লোকেশন পাওয়া যায়নি। তালিকা থেকে আপনার বিধানসভা বেছে নিন।');
+    setLocationStatusMsg('লোকেশন পাওয়া যায়নি। তালিকা থেকে আপনার স্থান বেছে নিন।');
   };
 
   // কারেন্ট লোকেশনের নাম বের করার ফাংশন
@@ -256,30 +311,70 @@ export default function App() {
               setUserCity(city);
             }
 
-            if (addressObj) {
-              const textMatch = matchConstituencyByAddressText(addressObj);
-              if (textMatch) {
-                setSelectedLocationId(textMatch.id);
-                setLocationStatusMsg(`শনাক্তকৃত: ${city} (${textMatch.nameBn} বিধানসভা)`);
-                return;
+            if (isWithinBarakValley(latitude, longitude)) {
+              if (addressObj) {
+                const textMatch = matchConstituencyByAddressText(addressObj);
+                if (textMatch) {
+                  setSelectedLocationId(textMatch.id);
+                  setLocationStatusMsg(`শনাক্তকৃত: ${city} (${textMatch.nameBn} বিধানসভা • আসল সময়)`);
+                  return;
+                }
               }
-            }
 
-            // Fallback to coordinate math
-            const { constituency, distanceKm } = findClosestConstituency(latitude, longitude);
-            if (distanceKm <= 60) {
+              // Fallback to closest Barak Valley constituency
+              const { constituency, distanceKm } = findClosestConstituency(latitude, longitude);
               setSelectedLocationId(constituency.id);
               setLocationStatusMsg(
-                `শনাক্তকৃত নিকটবর্তী: ${city || constituency.nameBn} (~${distanceKm} কিমি)`
+                `শনাক্তকৃত নিকটবর্তী: ${city || constituency.nameBn} (~${distanceKm} কিমি • বরাক উপত্যকা)`
               );
             } else {
-              setLocationStatusMsg(`শনাক্তকৃত স্থান: ${city || 'শিলচর বেস সময়'}`);
+              // Outside Barak Valley - All India Google calculation
+              const cityName = city || 'ভারতের অবস্থান';
+              const matchIndia = ALL_INDIA_LOCATIONS.find(
+                (loc) => loc.name.toLowerCase() === cityName.toLowerCase()
+              );
+              if (matchIndia) {
+                setSelectedLocationId(matchIndia.id);
+                setLocationStatusMsg(`জিপিএস দ্বারা সনাক্তকৃত: ${matchIndia.name} (গুগল পদ্ধতি)`);
+              } else {
+                const customGpsLoc: LocationMeta = {
+                  id: 'gps_detected',
+                  name: cityName,
+                  district: addressObj?.state_district || addressObj?.county || '',
+                  state: addressObj?.state || 'India',
+                  offset: 0,
+                  lat: latitude,
+                  lon: longitude,
+                  isBarakValley: false,
+                  description: `${cityName} (Google Method)`,
+                };
+                setDetectedCustomLocation(customGpsLoc);
+                setSelectedLocationId('gps_detected');
+                setLocationStatusMsg(`জিপিএস দ্বারা সনাক্তকৃত: ${cityName} (গুগল পদ্ধতি)`);
+              }
             }
           } catch {
-            const { constituency } = findClosestConstituency(latitude, longitude);
-            setUserCity(constituency.nameBn);
-            setSelectedLocationId(constituency.id);
-            setLocationStatusMsg(`শনাক্তকৃত বিধানসভা: ${constituency.nameBn}`);
+            if (isWithinBarakValley(latitude, longitude)) {
+              const { constituency } = findClosestConstituency(latitude, longitude);
+              setUserCity(constituency.nameBn);
+              setSelectedLocationId(constituency.id);
+              setLocationStatusMsg(`শনাক্তকৃত বিধানসভা: ${constituency.nameBn} (বরাক উপত্যকা)`);
+            } else {
+              const customGpsLoc: LocationMeta = {
+                id: 'gps_detected',
+                name: 'বর্তমান অবস্থান',
+                district: '',
+                state: 'India',
+                offset: 0,
+                lat: latitude,
+                lon: longitude,
+                isBarakValley: false,
+                description: 'বর্তমান অবস্থান (গুগল পদ্ধতি)',
+              };
+              setDetectedCustomLocation(customGpsLoc);
+              setSelectedLocationId('gps_detected');
+              setLocationStatusMsg('জিপিএস স্থানাঙ্ক দ্বারা গুগল পদ্ধতি প্রয়োগ করা হয়েছে');
+            }
           } finally {
             setIsDetectingLocation(false);
           }
@@ -334,8 +429,8 @@ export default function App() {
   // Current minutes from midnight
   const currentMinutesNow = now.getHours() * 60 + now.getMinutes();
 
-  // Construct location list
-  const locations: LocationMeta[] = useMemo(() => {
+  // Construct Barak Valley location list
+  const barakLocations: LocationMeta[] = useMemo(() => {
     return (Object.entries(locationOffsets) as [string, number][]).map(([id, offset]) => {
       const details = LOCATION_DETAILS[id] || {
         id,
@@ -347,9 +442,15 @@ export default function App() {
       return {
         ...details,
         offset,
+        isBarakValley: true,
       };
     });
   }, [locationOffsets]);
+
+  // Combined locations (Barak Valley + All India)
+  const allLocations: LocationMeta[] = useMemo(() => {
+    return [...barakLocations, ...ALL_INDIA_LOCATIONS];
+  }, [barakLocations]);
 
   // Selected location object
   const activeLocation: LocationMeta = useMemo(() => {
@@ -362,9 +463,13 @@ export default function App() {
         offset: customOffset,
         description: `Manual adjustment of ${customOffset >= 0 ? `+${customOffset}` : customOffset} min from Silchar`,
         isCustom: true,
+        isBarakValley: true,
       };
     }
-    const found = locations.find((l) => l.id === selectedLocationId);
+    if (selectedLocationId === 'gps_detected' && detectedCustomLocation) {
+      return detectedCustomLocation;
+    }
+    const found = allLocations.find((l) => l.id === selectedLocationId);
     return (
       found || {
         id: 'silchar',
@@ -373,14 +478,31 @@ export default function App() {
         state: 'Assam',
         offset: 0,
         description: 'Base Station (0 min)',
+        isBarakValley: true,
       }
     );
-  }, [selectedLocationId, customOffset, locations]);
+  }, [selectedLocationId, customOffset, allLocations, detectedCustomLocation]);
 
-  // Base prayer times for the chosen date (before offset)
+  // Base prayer times for the chosen date
+  // - Barak Valley locations: use user's authentic custom timetable
+  // - All-India locations: calculate using Google's Karachi method
   const basePrayerTimes = useMemo(() => {
-    return getBasePrayerTimesForDate(selectedDate, timetable, asrMethod);
-  }, [selectedDate, timetable, asrMethod]);
+    const isBarak = Boolean(
+      activeLocation.isBarakValley ||
+      ['cachar', 'hailakandi', 'karimganj'].includes(activeLocation.district?.toLowerCase() || '') ||
+      activeLocation.id === 'silchar' ||
+      activeLocation.id === 'custom' ||
+      DEFAULT_LOCATION_OFFSETS[activeLocation.id] !== undefined
+    );
+
+    if (isBarak) {
+      return getBasePrayerTimesForDate(selectedDate, timetable, asrMethod);
+    } else {
+      const lat = activeLocation.lat ?? 22.5726; // Default to Kolkata coordinates
+      const lon = activeLocation.lon ?? 88.3639;
+      return calculateGooglePrayerTimesForLocation(lat, lon, selectedDate, asrMethod);
+    }
+  }, [selectedDate, timetable, asrMethod, activeLocation]);
 
   const dateKey = formatDateKey(selectedDate);
   const hasUserOverride = Boolean(timetable[dateKey]);
@@ -424,7 +546,7 @@ export default function App() {
   }, [selectedDate, hijriAdjustment]);
 
   const sunrisePrayer = prayers.find((p) => p.key === 'sunrise');
-  const sunriseTimeStr = sunrisePrayer?.adjustedTime ? sunrisePrayer.adjustedTime.toLowerCase() : '5:23 am';
+  const sunriseTimeStr = sunrisePrayer?.adjustedTime ? String(sunrisePrayer.adjustedTime).toLowerCase() : '5:23 am';
 
   const prayerNameMap: Record<string, string> = {
     sehri_end: 'Fajr',
@@ -436,7 +558,7 @@ export default function App() {
   };
 
   const nextPrayerNameStr = nextPrayer?.key ? (prayerNameMap[nextPrayer.key] || 'Fajr') : 'Fajr';
-  const nextPrayerTimeStr = nextPrayer?.adjustedTime ? nextPrayer.adjustedTime.toLowerCase() : '4:08 am';
+  const nextPrayerTimeStr = nextPrayer?.adjustedTime ? String(nextPrayer.adjustedTime).toLowerCase() : '4:08 am';
 
   return (
     <>
@@ -457,11 +579,14 @@ export default function App() {
         sunriseTime={sunriseTimeStr}
         minutesToNext={minutesToNext}
         onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
+        lang={appLang}
+        onSelectLang={handleSelectLang}
+        onOpenLocationPicker={() => setIsLocationPickerOpen(true)}
         prayersChildren={
           <div className="space-y-6 pb-20">
             {/* Top Header */}
             <Header
-              locations={locations}
+              locations={barakLocations}
               selectedLocationId={selectedLocationId}
               onSelectLocation={setSelectedLocationId}
               customOffset={customOffset}
@@ -485,6 +610,7 @@ export default function App() {
               hijriAdjustment={hijriAdjustment}
               onOpenArabicCalendar={() => setActiveTab('arabic')}
               onOpenInstallHelp={() => setIsInstallHelpOpen(true)}
+              onOpenLocationPicker={() => setIsLocationPickerOpen(true)}
             />
 
             {/* Navigation View Switcher */}
@@ -746,7 +872,7 @@ export default function App() {
 
                 {/* Regional Location Comparison Matrix */}
                 <LocationComparison
-                  locations={locations}
+                  locations={barakLocations}
                   basePrayerTimes={basePrayerTimes}
                   selectedLocationId={selectedLocationId}
                   onSelectLocation={setSelectedLocationId}
@@ -794,6 +920,25 @@ export default function App() {
             </footer>
           </div>
         }
+      />
+
+      {/* Location Picker Modal (Barak Valley + All India) */}
+      <LocationPickerModal
+        isOpen={isLocationPickerOpen}
+        onClose={() => setIsLocationPickerOpen(false)}
+        barakLocations={barakLocations}
+        selectedLocationId={selectedLocationId}
+        onSelectLocation={(id, customLoc) => {
+          if (customLoc) {
+            setDetectedCustomLocation(customLoc);
+          }
+          setSelectedLocationId(id);
+        }}
+        onDetectLocation={detectUserLocation}
+        isDetectingLocation={isDetectingLocation}
+        lang={appLang}
+        customOffset={customOffset}
+        onCustomOffsetChange={setCustomOffset}
       />
 
       {/* Data Editor Modal */}

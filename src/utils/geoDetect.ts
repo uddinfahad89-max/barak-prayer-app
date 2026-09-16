@@ -48,6 +48,13 @@ export function calculateDistanceKm(
   return R * c;
 }
 
+export function isWithinBarakValley(lat: number, lon: number): boolean {
+  // Center of Barak Valley is roughly Silchar (24.8333, 92.7789)
+  // Barak Valley spans roughly within ~75 km radius of Silchar
+  const dist = calculateDistanceKm(lat, lon, 24.8333, 92.7789);
+  return dist <= 75;
+}
+
 /**
  * Find the closest Barak Valley constituency given GPS coordinates
  */
