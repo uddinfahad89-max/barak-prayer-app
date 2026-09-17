@@ -24,18 +24,29 @@ interface UmrahPackageFormModalProps {
   lang?: AppLanguage;
 }
 
-const COMMON_INCLUSIONS = [
-  'সৌদি উমরাহ ভিসা ও ইন্সুরেন্স',
-  'রিটার্ন এয়ার টিকিট',
-  'মক্কা ও মদিনা হোটেল আবাসন',
-  '৩ বেলা দেশি বুফে খাবার',
-  'মক্কা ও মদিনার ঐতিহাসিক স্থান জিয়ারত',
-  'শীতাতপ নিয়ন্ত্রিত বাসে অভ্যন্তরীণ যাতায়াত',
-  'অভিজ্ঞ মুয়াল্লিম ও আলেম গাইড',
-  '৫ লিটার জমজম পানি',
-  'উমরাহ কিট, ইহরাম ও ট্রাভেল ব্যাগ',
-  'হারামাইন হাই স্পিড বুলেট ট্রেন',
-];
+const COMMON_INCLUSIONS = {
+  bn: [
+    'উমরাহ ভিসা ও হেলথ ইনস্যুরেন্স',
+    'রিটার্ন ফ্লাইটের টিকিট',
+    'মক্কা ও মদিনা হোটেল শেয়ারিং',
+    '৩ বেলা বাংলা খাবার সরবরাহ',
+    'মক্কা ও মদিনা ঐতিহাসিক স্থান জিয়ারাহ',
+    'অভিজ্ঞ মুয়াল্লিম দ্বারা সরাসরি নির্দেশিকা',
+    'লগেজ ট্রান্সপোর্ট ও যাতায়াত সুবিধা',
+    '৫ লিটার জমজমের পানি'
+  ],
+  en: [
+    'Umrah Visa & Health Insurance',
+    'Return Flight Ticket',
+    'Makkah & Madinah Hotel Sharing',
+    '3 Meals Daily Included',
+    'Makkah & Madinah Historical Ziyarah',
+    'Guided by Experienced Muallim',
+    'Luggage & Transport Service',
+    '5L Zamzam Water Included'
+  ]
+};
+
 
 export const UmrahPackageFormModal: React.FC<UmrahPackageFormModalProps> = ({
   isOpen,
