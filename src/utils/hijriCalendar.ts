@@ -10,10 +10,12 @@ export interface HijriDate {
   monthNameEn: string;
   monthNameAr: string;
   monthNameBn: string;
+  monthNameUr?: string;
   year: number;
   formattedEn: string;
   formattedAr: string;
   formattedBn: string;
+  formattedUr?: string;
   specialEvent?: string;
   isAyyamAlBeed?: boolean;
 }

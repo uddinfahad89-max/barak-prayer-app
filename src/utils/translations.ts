@@ -82,6 +82,64 @@ export interface Translations {
   save: string;
   copied: string;
   copy: string;
+
+  // Matrimony & Imam portal
+  matrimonyPortalTitle: string;
+  matrimonyPortalSubtitle: string;
+  subtabMatrimony: string;
+  subtabMosques: string;
+  subtabImams: string;
+  subtabMatrimonyDesc: string;
+  subtabMosquesDesc: string;
+  subtabImamsDesc: string;
+  postMatrimonyBtn: string;
+  postMosqueBtn: string;
+  postImamBtn: string;
+  searchMatrimonyPlaceholder: string;
+  searchMosquesPlaceholder: string;
+  searchImamsPlaceholder: string;
+  filterAll: string;
+  filterGroom: string;
+  filterBride: string;
+  filterAllDistricts: string;
+  sortNewest: string;
+  sortSalaryHigh: string;
+  sortSalaryLow: string;
+  newBadge: string;
+  noDataFound: string;
+  resetFilter: string;
+  experienceAge: string;
+  years: string;
+  age: string;
+  salaryHonorarium: string;
+  contactWhatsApp: string;
+  callDirect: string;
+  viewDetails: string;
+
+  // Umrah & Ummah
+  umrahPortalTitle: string;
+  umrahPortalSubtitle: string;
+  umrahTab: string;
+  duaWallTab: string;
+  addUmrahPackage: string;
+
+  // General & GPS
+  changeLocation: string;
+  detectedGps: string;
+  detectedIp: string;
+  barakValleyText: string;
+  googleMethodText: string;
+  createdBy: string;
+  saveAndAlarm: string;
+  stopAlarm: string;
+  nowPlayingAzan: string;
+  upcomingNext: string;
+  inTime: string;
+  silcharBase: string;
+  arabicCalendar: string;
+  installGuide: string;
+  prayerTimetableTitle: string;
+  barakConstituenciesSub: string;
 }
 
 export const TRANSLATIONS: Record<AppLanguage, Translations> = {
@@ -158,6 +216,61 @@ export const TRANSLATIONS: Record<AppLanguage, Translations> = {
     save: 'Save',
     copied: 'Copied!',
     copy: 'Copy',
+
+    matrimonyPortalTitle: 'Imam, Mosque & Matrimony Portal',
+    matrimonyPortalSubtitle: 'Mosque vacancies, Imam biodatas & Shariah-compliant groom/bride matchmaking',
+    subtabMatrimony: 'Matrimonial Profiles',
+    subtabMosques: 'Mosque Vacancies',
+    subtabImams: 'Imam Biodatas',
+    subtabMatrimonyDesc: 'Shariah-compliant groom & bride profiles',
+    subtabMosquesDesc: 'Job openings for Imams, Muazzins & Khateebs',
+    subtabImamsDesc: 'Qualified Hafiz, Qari & Islamic scholars seeking positions',
+    postMatrimonyBtn: '+ Submit Biodata',
+    postMosqueBtn: '+ Post Mosque Vacancy',
+    postImamBtn: '+ Submit Imam Biodata',
+    searchMatrimonyPlaceholder: 'Search by name, occupation, education, area...',
+    searchMosquesPlaceholder: 'Search by mosque name, area, post...',
+    searchImamsPlaceholder: 'Search by Imam name, qualification, location...',
+    filterAll: 'All',
+    filterGroom: '🤵 Groom',
+    filterBride: '👰 Bride',
+    filterAllDistricts: 'All Areas / Districts',
+    sortNewest: 'Newest First',
+    sortSalaryHigh: 'Honorarium (High to Low)',
+    sortSalaryLow: 'Honorarium (Low to High)',
+    newBadge: 'NEW',
+    noDataFound: 'No matching records found',
+    resetFilter: 'Reset Filters',
+    experienceAge: 'Experience & Age',
+    years: 'years',
+    age: 'Age',
+    salaryHonorarium: 'Honorarium / Salary',
+    contactWhatsApp: 'WhatsApp',
+    callDirect: 'Call',
+    viewDetails: 'View Details',
+
+    umrahPortalTitle: 'Umrah Packages & Ummah Community',
+    umrahPortalSubtitle: 'Direct booking with trusted Umrah travel agencies',
+    umrahTab: 'Umrah Packages',
+    duaWallTab: 'Ummah Dua Wall',
+    addUmrahPackage: '+ Add Agency Package',
+
+    changeLocation: 'Change Location',
+    detectedGps: 'GPS Detected',
+    detectedIp: 'Approx. Location',
+    barakValleyText: 'Barak Valley',
+    googleMethodText: 'Google Method',
+    createdBy: 'Created by:',
+    saveAndAlarm: 'Save & Set Alarm',
+    stopAlarm: 'Stop',
+    nowPlayingAzan: 'Adhan is playing...',
+    upcomingNext: 'Upcoming Next',
+    inTime: 'In',
+    silcharBase: 'Silchar base',
+    arabicCalendar: 'Hijri Calendar',
+    installGuide: 'Install App',
+    prayerTimetableTitle: 'Prayer & Fasting Timetable',
+    barakConstituenciesSub: 'Barak Valley Constituencies: Cachar, Hailakandi & Karimganj (16 Constituencies)',
   },
 
   ur: {
@@ -233,6 +346,61 @@ export const TRANSLATIONS: Record<AppLanguage, Translations> = {
     save: 'محفوظ کریں',
     copied: 'کاپی ہو گیا!',
     copy: 'کاپی',
+
+    matrimonyPortalTitle: 'امام، مسجد اور نکاح پورٹل',
+    matrimonyPortalSubtitle: 'مسجد کی بھرتی، ائمہ کا بائیو ڈیٹا اور شرعی رشتے',
+    subtabMatrimony: 'شرعی رشتے',
+    subtabMosques: 'مسجد کی بھرتی',
+    subtabImams: 'ائمہ بائیو ڈیٹا',
+    subtabMatrimonyDesc: 'دیندار لڑکے اور لڑکیوں کے شرعی کوائف',
+    subtabMosquesDesc: 'ائمہ کرام، مؤذنین اور خطباء کے لیے ملازمتیں',
+    subtabImamsDesc: 'تجربہ کار حفاظ، قراء اور علمائے کرام کے کوائف',
+    postMatrimonyBtn: '+ بائیو ڈیٹا شامل کریں',
+    postMosqueBtn: '+ مسجد کا اشتہار دیں',
+    postImamBtn: '+ امام بائیو ڈیٹا جمع کریں',
+    searchMatrimonyPlaceholder: 'نام، پیشہ، تعلیم یا علاقے سے تلاش کریں...',
+    searchMosquesPlaceholder: 'مسجد کے نام، علاقے یا عہدے سے تلاش کریں...',
+    searchImamsPlaceholder: 'نام، قابلیت یا علاقے سے تلاش کریں...',
+    filterAll: 'سب',
+    filterGroom: '🤵 لڑکا',
+    filterBride: '👰 لڑکی',
+    filterAllDistricts: 'تمام اضلاع',
+    sortNewest: 'تازہ ترین',
+    sortSalaryHigh: 'مشاہرہ (زیادہ سے کم)',
+    sortSalaryLow: 'مشاہرہ (کم سے زیادہ)',
+    newBadge: 'نیا',
+    noDataFound: 'کوئی ڈیٹا نہیں ملا',
+    resetFilter: 'فلٹر ختم کریں',
+    experienceAge: 'تجربہ اور عمر',
+    years: 'سال',
+    age: 'عمر',
+    salaryHonorarium: 'ماہانہ مشاہرہ',
+    contactWhatsApp: 'واٹس ایپ',
+    callDirect: 'کال کریں',
+    viewDetails: 'تفصیل دیکھیں',
+
+    umrahPortalTitle: 'عمرہ پیکیجز اور امت پلیٹ فارم',
+    umrahPortalSubtitle: 'معتبر ٹریول ایجنسیوں سے براہ راست رابطہ اور بکنگ',
+    umrahTab: 'عمرہ پیکیجز',
+    duaWallTab: 'دعائیہ دیوار',
+    addUmrahPackage: '+ پیکیج شامل کریں',
+
+    changeLocation: 'مقام تبدیل کریں',
+    detectedGps: 'جی پی ایس سے معلوم شدہ',
+    detectedIp: 'اندازاً مقام',
+    barakValleyText: 'براک ویلی',
+    googleMethodText: 'گوگل طریقہ',
+    createdBy: 'تیار کردہ:',
+    saveAndAlarm: 'محفوظ کریں اور الارم آن کریں',
+    stopAlarm: 'روکیں',
+    nowPlayingAzan: 'اذان جاری ہے...',
+    upcomingNext: 'اگلی نماز',
+    inTime: 'باقی',
+    silcharBase: 'سلچر بنیادی وقت',
+    arabicCalendar: 'ہجری کیلنڈر',
+    installGuide: 'ایپ انسٹال کریں',
+    prayerTimetableTitle: 'نماز و روزے کے اوقات',
+    barakConstituenciesSub: 'براک ویلی کے حلقے: کاچار، ہائلا کانڈی اور کریم گنج (16 حلقے)',
   },
 
   bn: {
@@ -308,6 +476,61 @@ export const TRANSLATIONS: Record<AppLanguage, Translations> = {
     save: 'সংরক্ষণ করুন',
     copied: 'কপি হয়েছে!',
     copy: 'কপি',
+
+    matrimonyPortalTitle: 'ইমাম, মসজিদ ও দ্বীনি পাত্র-পাত্রী পোর্টাল',
+    matrimonyPortalSubtitle: 'মসজিদের নিয়োগ, ইমামদের বায়োডাটা ও দ্বীনি পাত্র-পাত্রীর খোঁজ',
+    subtabMatrimony: 'দ্বীনি পাত্র-পাত্রী',
+    subtabMosques: 'মসজিদ নিয়োগ',
+    subtabImams: 'ইমাম বায়োডাটা',
+    subtabMatrimonyDesc: 'পাত্র ও পাত্রীর শরীয়াহসম্মত ইসলামিক বায়োডাটা',
+    subtabMosquesDesc: 'ইমাম, মুয়াজ্জিন ও খতীব নিয়োগের জন্য বিজ্ঞপ্তি',
+    subtabImamsDesc: 'অভিজ্ঞ ও যোগ্য হাফেজ, কারী ও আলেমদের তথ্য',
+    postMatrimonyBtn: '+ পাত্র/পাত্রীর বায়োডাটা দিন',
+    postMosqueBtn: '+ মসজিদের নিয়োগ দিন',
+    postImamBtn: '+ ইমাম বায়োডাটা দিন',
+    searchMatrimonyPlaceholder: 'পাত্র/পাত্রীর নাম, পেশা, শিক্ষা, এলাকা দিয়ে খুঁজুন...',
+    searchMosquesPlaceholder: 'মসজিদের নাম, এলাকা, পদবী দিয়ে খুঁজুন...',
+    searchImamsPlaceholder: 'ইমামের নাম, শিক্ষাগত যোগ্যতা, এলাকা দিয়ে খুঁজুন...',
+    filterAll: 'সবাই',
+    filterGroom: '🤵 পাত্র',
+    filterBride: '👰 পাত্রী',
+    filterAllDistricts: 'সব এলাকা / জেলা',
+    sortNewest: 'নতুনগুলো আগে',
+    sortSalaryHigh: 'হাদিয়া (বেশি থেকে কম)',
+    sortSalaryLow: 'হাদিয়া (কম থেকে বেশি)',
+    newBadge: 'নতুন',
+    noDataFound: 'কোন তথ্য পাওয়া যায়নি',
+    resetFilter: 'ফিল্টার রিসেট করুন',
+    experienceAge: 'অভিজ্ঞতা ও বয়স',
+    years: 'বছর',
+    age: 'বয়স',
+    salaryHonorarium: 'মাসিক হাদিয়া',
+    contactWhatsApp: 'হোয়াটসঅ্যাপ',
+    callDirect: 'কল করুন',
+    viewDetails: 'বিস্তারিত দেখুন',
+
+    umrahPortalTitle: 'উমরাহ প্যাকেজ ও উম্মাহ প্ল্যাটফর্ম',
+    umrahPortalSubtitle: 'উমরাহ ট্রাভেলস কোম্পানির প্যাকেজসমূহ ও এজেন্সির সাথে সরাসরি বুকিং',
+    umrahTab: 'উমরাহ প্যাকেজ',
+    duaWallTab: 'উম্মাহ দোয়া ওয়াল',
+    addUmrahPackage: '+ এজেন্সির প্যাকেজ যোগ করুন',
+
+    changeLocation: 'স্থান পরিবর্তন করুন',
+    detectedGps: 'জিপিএস দ্বারা সনাক্তকৃত',
+    detectedIp: 'আনুমানিক অবস্থান',
+    barakValleyText: 'বরাক উপত্যকা',
+    googleMethodText: 'গুগল পদ্ধতি',
+    createdBy: 'অ্যাপটি তৈরি করেছেন:',
+    saveAndAlarm: 'সেভ করুন ও অ্যালার্ম চালু করুন',
+    stopAlarm: 'থামান',
+    nowPlayingAzan: 'সুমধুর আযান চলছে...',
+    upcomingNext: 'পরবর্তী নামাজ',
+    inTime: 'আর বাকি',
+    silcharBase: 'শিলচর মূল সময়',
+    arabicCalendar: 'আরবী ক্যালেন্ডার',
+    installGuide: 'ইনস্টল গাইড',
+    prayerTimetableTitle: 'নামাজ ও রোজার স্থায়ী সময়সূচি',
+    barakConstituenciesSub: 'ক্যাছাড়, হাইলাকান্দি ও করিমগঞ্জ • ১৬টি নির্বাচনী এলাকা',
   },
 };
 

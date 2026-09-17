@@ -252,7 +252,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                       : 'bg-[#09332E] text-emerald-200 hover:bg-emerald-800/60 border border-emerald-700/40'
                   }`}
                 >
-                  All ({barakLocations.length})
+                  {lang === 'bn' ? `সকল (${barakLocations.length})` : lang === 'ur' ? `تمام (${barakLocations.length})` : `All (${barakLocations.length})`}
                 </button>
                 <button
                   onClick={() => setBarakDistrict('Cachar')}
@@ -262,7 +262,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                       : 'bg-[#09332E] text-emerald-200 hover:bg-emerald-800/60 border border-emerald-700/40'
                   }`}
                 >
-                  Cachar (ক্যাছাড়)
+                  {lang === 'bn' ? 'কাছাড় (Cachar)' : lang === 'ur' ? 'کچھر (Cachar)' : 'Cachar'}
                 </button>
                 <button
                   onClick={() => setBarakDistrict('Hailakandi')}
@@ -272,7 +272,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                       : 'bg-[#09332E] text-emerald-200 hover:bg-emerald-800/60 border border-emerald-700/40'
                   }`}
                 >
-                  Hailakandi (হাইলাকান্দি)
+                  {lang === 'bn' ? 'হাইলাকান্দি (Hailakandi)' : lang === 'ur' ? 'ہائلاکانڈی (Hailakandi)' : 'Hailakandi'}
                 </button>
                 <button
                   onClick={() => setBarakDistrict('Karimganj')}
@@ -282,7 +282,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                       : 'bg-[#09332E] text-emerald-200 hover:bg-emerald-800/60 border border-emerald-700/40'
                   }`}
                 >
-                  Karimganj (করিমগঞ্জ)
+                  {lang === 'bn' ? 'করিমগঞ্জ (Karimganj)' : lang === 'ur' ? 'کریم گنج (Karimganj)' : 'Karimganj'}
                 </button>
               </div>
 
@@ -325,7 +325,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                             )}
                           </div>
                           <div className="text-[11px] text-emerald-300/70">
-                            {loc.district} District
+                            {loc.district} {lang === 'bn' ? 'জেলা' : lang === 'ur' ? 'ضلع' : 'District'}
                           </div>
                         </div>
                       </div>
@@ -340,7 +340,9 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                               : 'bg-sky-900/80 text-sky-200'
                           }`}
                         >
-                          {loc.offset === 0 ? 'Base Station' : `${offsetSign} min`}
+                          {loc.offset === 0
+                            ? (lang === 'bn' ? 'মূল কেন্দ্র' : lang === 'ur' ? 'بنیادی مرکز' : 'Base Station')
+                            : `${offsetSign} ${lang === 'bn' ? 'মি.' : 'min'}`}
                         </span>
                         {isSelected && <Check className="w-4 h-4 text-[#E2A336]" />}
                       </div>
@@ -355,11 +357,15 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                   <div className="flex items-center gap-2 text-xs font-bold text-white">
                     <Sliders className="w-4 h-4 text-[#E2A336]" />
                     <span>
-                      {lang === 'bn' ? 'কাস্টম মিনিট অফসেট' : 'Custom Minute Offset (from Silchar)'}
+                      {lang === 'bn'
+                        ? 'কাস্টম মিনিট অফসেট (শিলচর থেকে)'
+                        : lang === 'ur'
+                        ? 'اپنی مرضی کا منٹ آفسیٹ (سلچر سے)'
+                        : 'Custom Minute Offset (from Silchar)'}
                     </span>
                   </div>
                   <span className="text-xs font-mono font-bold text-[#E2A336] bg-[#03221F] px-2 py-0.5 rounded border border-emerald-700">
-                    {customOffset > 0 ? `+${customOffset}` : customOffset} min
+                    {customOffset > 0 ? `+${customOffset}` : customOffset} {lang === 'bn' ? 'মি.' : 'min'}
                   </span>
                 </div>
                 <input
@@ -383,8 +389,8 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                   }`}
                 >
                   {selectedLocationId === 'custom'
-                    ? '✓ Custom Location Active'
-                    : 'Apply Custom Offset'}
+                    ? (lang === 'bn' ? '✓ কাস্টম স্থান সক্রিয়' : lang === 'ur' ? '✓ کسٹم مقام فعال' : '✓ Custom Location Active')
+                    : (lang === 'bn' ? 'কাস্টম অফসেট প্রয়োগ করুন' : lang === 'ur' ? 'کسٹم آفسیٹ لاگو کریں' : 'Apply Custom Offset')}
                 </button>
               </div>
             </div>
@@ -403,7 +409,7 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
                       : 'bg-[#09332E] text-emerald-200 hover:bg-emerald-800/60 border border-emerald-700/40'
                   }`}
                 >
-                  All States ({ALL_INDIA_LOCATIONS.length})
+                  {lang === 'bn' ? `সব রাজ্য (${ALL_INDIA_LOCATIONS.length})` : lang === 'ur' ? `تمام ریاستیں (${ALL_INDIA_LOCATIONS.length})` : `All States (${ALL_INDIA_LOCATIONS.length})`}
                 </button>
                 {INDIAN_STATES_LIST.map((st) => (
                   <button
@@ -501,14 +507,14 @@ export const LocationPickerModal: React.FC<LocationPickerModalProps> = ({
         <div className="px-5 py-3 bg-[#09332E] border-t border-emerald-800/60 flex items-center justify-between text-xs text-emerald-300/80">
           <span>
             {activeTab === 'barak'
-              ? 'Barak Valley: Cachar, Hailakandi & Karimganj'
-              : 'All India: Over 100+ cities with Google prayer times'}
+              ? (lang === 'bn' ? 'বরাক উপত্যকা: কাছাড়, হাইলাকান্দি ও করিমগঞ্জ' : lang === 'ur' ? 'براک وادی: کچھر، ہائلاکانڈی اور کریم گنج' : 'Barak Valley: Cachar, Hailakandi & Karimganj')
+              : (lang === 'bn' ? 'পুরা ভারত: গুগল ভিত্তিক ১০০+ শহর' : lang === 'ur' ? 'پورا ہندوستان: گوگل پر مبنی ۱۰۰+ شہر' : 'All India: Over 100+ cities with Google prayer times')}
           </span>
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white font-semibold transition-colors"
           >
-            {lang === 'bn' ? 'ঠিক আছে' : 'Done'}
+            {lang === 'bn' ? 'ঠিক আছে' : lang === 'ur' ? 'مکمل' : 'Done'}
           </button>
         </div>
       </div>

@@ -48,11 +48,55 @@ export function calculateDistanceKm(
   return R * c;
 }
 
-export function isWithinBarakValley(lat: number, lon: number): boolean {
-  // Center of Barak Valley is roughly Silchar (24.8333, 92.7789)
-  // Barak Valley spans roughly within ~75 km radius of Silchar
+export function isWithinBarakValley(
+  lat: number,
+  lon: number,
+  addressObj?: Record<string, string>
+): boolean {
+  // 1. Check if reverse-geocoded address explicitly mentions Barak Valley districts / places
+  if (addressObj) {
+    const fullText = Object.values(addressObj).join(' ').toLowerCase();
+    if (
+      fullText.includes('cachar') ||
+      fullText.includes('kachar') ||
+      fullText.includes('karimganj') ||
+      fullText.includes('sribhumi') ||
+      fullText.includes('sri bhumi') ||
+      fullText.includes('shribhumi') ||
+      fullText.includes('hailakandi') ||
+      fullText.includes('silchar') ||
+      fullText.includes('badarpur') ||
+      fullText.includes('sonai') ||
+      fullText.includes('barak') ||
+      fullText.includes('udharbond') ||
+      fullText.includes('lakhipur') ||
+      fullText.includes('barkhola') ||
+      fullText.includes('katigorah') ||
+      fullText.includes('algapur') ||
+      fullText.includes('katlicherra') ||
+      fullText.includes('lala') ||
+      fullText.includes('patharkandi') ||
+      fullText.includes('ratabari') ||
+      fullText.includes('dholai') ||
+      fullText.includes('khalacherra') ||
+      fullText.includes('panisagar') ||
+      fullText.includes('ramkrishna') ||
+      fullText.includes('rk nagar')
+    ) {
+      return true;
+    }
+  }
+
+  // 2. Geographic Bounding Box for Barak Valley (Cachar, Hailakandi, Karimganj / Sribhumi)
+  // Latitude: ~24.00° N to 25.30° N
+  // Longitude: ~92.00° E to 93.35° E
+  if (lat >= 24.00 && lat <= 25.30 && lon >= 92.00 && lon <= 93.35) {
+    return true;
+  }
+
+  // 3. Or within 125 km of Silchar center (covers all extremities of Barak Valley)
   const dist = calculateDistanceKm(lat, lon, 24.8333, 92.7789);
-  return dist <= 75;
+  return dist <= 125;
 }
 
 /**
@@ -117,16 +161,19 @@ export async function reverseGeocodeCity(lat: number, lon: number): Promise<{ ci
     );
     if (bdcRes.ok) {
       const data = await bdcRes.json();
-      const city = data.city || data.locality || data.principalSubdivision || data.countryName;
+      const city = data.locality || data.city || data.principalSubdivision || data.countryName;
       if (city && city.trim().length > 0) {
+        const adminLevels = data.localityInfo?.administrative || [];
+        const adminNames = adminLevels.map((a: any) => a.name || '').filter(Boolean);
         return {
-          city: city.trim(),
+          city: (data.locality || data.city || city).trim(),
           fullAddress: `${city}, ${data.principalSubdivision || ''}`,
           addressObj: {
             city: data.city || '',
             locality: data.locality || '',
             region: data.principalSubdivision || '',
             country: data.countryName || '',
+            district: adminNames.join(' '),
           },
         };
       }
@@ -144,9 +191,10 @@ export async function reverseGeocodeCity(lat: number, lon: number): Promise<{ ci
       const data = await nomRes.json();
       const address = data.address || {};
       const city =
-        address.city ||
         address.town ||
+        address.city ||
         address.village ||
+        address.municipality ||
         address.suburb ||
         address.county ||
         address.state_district ||
@@ -177,10 +225,42 @@ export function matchConstituencyByAddressText(address: Record<string, string>):
   for (const c of CONSTITUENCY_COORDS) {
     const enName = c.name.toLowerCase();
     const id = c.id.toLowerCase();
-    if (fullText.includes(enName) || fullText.includes(id)) {
+    const idBase = id.replace(/_north|_south/, '');
+    if (fullText.includes(enName) || fullText.includes(id) || fullText.includes(idBase)) {
       return c;
     }
   }
+
+  // Check district / regional fallbacks
+  if (fullText.includes('hailakandi') || fullText.includes('algapur') || fullText.includes('lala') || fullText.includes('katlicherra')) {
+    return CONSTITUENCY_COORDS.find((c) => c.id === 'hailakandi') || null;
+  }
+  if (
+    fullText.includes('karimganj') ||
+    fullText.includes('sribhumi') ||
+    fullText.includes('sri bhumi') ||
+    fullText.includes('shribhumi') ||
+    fullText.includes('badarpur') ||
+    fullText.includes('patharkandi') ||
+    fullText.includes('ratabari') ||
+    fullText.includes('ramkrishna')
+  ) {
+    return CONSTITUENCY_COORDS.find((c) => c.id === 'karimganj_north') || null;
+  }
+  if (
+    fullText.includes('cachar') ||
+    fullText.includes('kachar') ||
+    fullText.includes('silchar') ||
+    fullText.includes('udharbond') ||
+    fullText.includes('lakhipur') ||
+    fullText.includes('sonai') ||
+    fullText.includes('dholai') ||
+    fullText.includes('barkhola') ||
+    fullText.includes('katigorah')
+  ) {
+    return CONSTITUENCY_COORDS.find((c) => c.id === 'silchar') || null;
+  }
+
   return null;
 }
 

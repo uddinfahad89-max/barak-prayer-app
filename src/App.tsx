@@ -66,6 +66,8 @@ export default function App() {
     return 'en';
   });
 
+  const lang = appLang;
+
   const handleSelectLang = (newLang: AppLanguage) => {
     setAppLang(newLang);
     try {
@@ -244,19 +246,50 @@ export default function App() {
   // আইপি ভিত্তিক ফলব্যাক লোকেশন ফাংশন
   const tryIpFallback = async () => {
     try {
-      const res = await fetch('https://ipapi.co/json/');
-      if (res.ok) {
-        const data = await res.json();
-        const city = data.city || data.region || 'আপনার অঞ্চল';
+      let data: any = null;
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        if (res.ok) data = await res.json();
+      } catch {
+        // try alternative IP service
+      }
+
+      if (!data) {
+        try {
+          const res = await fetch('https://ipwho.is/');
+          if (res.ok) {
+            const raw = await res.json();
+            if (raw.success !== false) {
+              data = {
+                city: raw.city,
+                region: raw.region,
+                latitude: raw.latitude,
+                longitude: raw.longitude,
+              };
+            }
+          }
+        } catch {
+          // fallback
+        }
+      }
+
+      if (data) {
+        const city = data.city || data.region || (lang === 'bn' ? 'আপনার অঞ্চল' : lang === 'ur' ? 'آپ کا علاقہ' : 'Your Region');
         setUserCity(city);
         if (typeof data.latitude === 'number' && typeof data.longitude === 'number') {
-          if (isWithinBarakValley(data.latitude, data.longitude)) {
-            const { constituency, distanceKm } = findClosestConstituency(data.latitude, data.longitude);
-            if (distanceKm <= 80) {
-              setSelectedLocationId(constituency.id);
-              setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (${constituency.nameBn} বিধানসভা • বরাক উপত্যকা)`);
-              return;
-            }
+          const ipAddressObj = { city: data.city || '', region: data.region || '' };
+          if (isWithinBarakValley(data.latitude, data.longitude, ipAddressObj)) {
+            const { constituency } = findClosestConstituency(data.latitude, data.longitude);
+            setSelectedLocationId(constituency.id);
+            const constName = lang === 'en' ? constituency.name : constituency.nameBn;
+            setLocationStatusMsg(
+              lang === 'en'
+                ? `Detected via IP: ${city} (${constName} • Barak Valley)`
+                : lang === 'ur'
+                ? `آئی پی سے شناخت: ${city} (${constituency.name} • براک وادی)`
+                : `আইপি দ্বারা সনাক্তকৃত: ${city} (${constName} বিধানসভা • বরাক উপত্যকা)`
+            );
+            return;
           } else {
             // Outside Barak Valley -> All India city
             const matchIndia = ALL_INDIA_LOCATIONS.find(
@@ -266,7 +299,13 @@ export default function App() {
             );
             if (matchIndia) {
               setSelectedLocationId(matchIndia.id);
-              setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${matchIndia.name} (গুগল পদ্ধতি)`);
+              setLocationStatusMsg(
+                lang === 'en'
+                  ? `Detected via IP: ${matchIndia.name} (Google Method)`
+                  : lang === 'ur'
+                  ? `آئی پی سے شناخت: ${matchIndia.name} (گوگل طریقہ)`
+                  : `আইপি দ্বারা সনাক্তকৃত: ${matchIndia.name} (গুগল পদ্ধতি)`
+              );
               return;
             } else {
               const customLoc: LocationMeta = {
@@ -282,112 +321,186 @@ export default function App() {
               };
               setDetectedCustomLocation(customLoc);
               setSelectedLocationId('gps_detected');
-              setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city} (গুগল পদ্ধতি)`);
+              setLocationStatusMsg(
+                lang === 'en'
+                  ? `Detected via IP: ${city} (Google Method)`
+                  : lang === 'ur'
+                  ? `آئی پی سے شناخت: ${city} (گوگل طریقہ)`
+                  : `আইপি দ্বারা সনাক্তকৃত: ${city} (গুগল পদ্ধতি)`
+              );
               return;
             }
           }
         }
-        setLocationStatusMsg(`আইপি দ্বারা সনাক্তকৃত: ${city}`);
+        setLocationStatusMsg(
+          lang === 'en' ? `Detected via IP: ${city}` : lang === 'ur' ? `آئی پی سے شناخت: ${city}` : `আইপি দ্বারা সনাক্তকৃত: ${city}`
+        );
         return;
       }
     } catch {
       // Network or CORS issue, handled gracefully
     }
-    setLocationStatusMsg('লোকেশন পাওয়া যায়নি। তালিকা থেকে আপনার স্থান বেছে নিন।');
+    setLocationStatusMsg(
+      lang === 'en'
+        ? 'Location not found. Please choose your location from the list.'
+        : lang === 'ur'
+        ? 'مقام نہیں ملا۔ برائے مہربانی فہرست سے انتخاب کریں۔'
+        : 'লোকেশন পাওয়া যায়নি। তালিকা থেকে আপনার স্থান বেছে নিন।'
+    );
   };
 
   // কারেন্ট লোকেশনের নাম বের করার ফাংশন
   const detectUserLocation = () => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
       setIsDetectingLocation(true);
-      setLocationStatusMsg('জিপিএস লোকেশন সনাক্ত করা হচ্ছে...');
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserCoords({ lat: latitude, lon: longitude });
-          try {
-            const { city, addressObj } = await reverseGeocodeCity(latitude, longitude);
-            if (city) {
-              setUserCity(city);
+      setLocationStatusMsg(
+        lang === 'en'
+          ? 'Acquiring GPS location (high accuracy)...'
+          : lang === 'ur'
+          ? 'جی پی ایس مقام حاصل کیا جا رہا ہے...'
+          : 'জিপিএস লোকেশন সনাক্ত করা হচ্ছে...'
+      );
+
+      const handleCoordsSuccess = async (position: GeolocationPosition) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        setUserCoords({ lat: latitude, lon: longitude });
+        try {
+          const { city, addressObj } = await reverseGeocodeCity(latitude, longitude);
+          if (city) {
+            setUserCity(city);
+          }
+
+          if (isWithinBarakValley(latitude, longitude, addressObj)) {
+            if (addressObj) {
+              const textMatch = matchConstituencyByAddressText(addressObj);
+              if (textMatch) {
+                setSelectedLocationId(textMatch.id);
+                const constName = lang === 'en' ? textMatch.name : textMatch.nameBn;
+                setLocationStatusMsg(
+                  lang === 'en'
+                    ? `Detected: ${city || constName} (${constName} • Authentic Time)`
+                    : lang === 'ur'
+                    ? `شناخت شدہ: ${city || constName} (${textMatch.name} • اصل وقت)`
+                    : `শনাক্তকৃত: ${city} (${constName} বিধানসভা • আসল সময়)`
+                );
+                return;
+              }
             }
 
-            if (isWithinBarakValley(latitude, longitude)) {
-              if (addressObj) {
-                const textMatch = matchConstituencyByAddressText(addressObj);
-                if (textMatch) {
-                  setSelectedLocationId(textMatch.id);
-                  setLocationStatusMsg(`শনাক্তকৃত: ${city} (${textMatch.nameBn} বিধানসভা • আসল সময়)`);
-                  return;
-                }
-              }
-
-              // Fallback to closest Barak Valley constituency
-              const { constituency, distanceKm } = findClosestConstituency(latitude, longitude);
-              setSelectedLocationId(constituency.id);
+            // Fallback to closest Barak Valley constituency
+            const { constituency, distanceKm } = findClosestConstituency(latitude, longitude);
+            setSelectedLocationId(constituency.id);
+            const constName = lang === 'en' ? constituency.name : constituency.nameBn;
+            setLocationStatusMsg(
+              lang === 'en'
+                ? `Nearest detected: ${city || constName} (~${distanceKm} km • Barak Valley)`
+                : lang === 'ur'
+                ? `قریبی مقام: ${city || constName} (~${distanceKm} کلومیٹر • براک وادی)`
+                : `শনাক্তকৃত নিকটবর্তী: ${city || constName} (~${distanceKm} কিমি • বরাক উপত্যকা)`
+            );
+          } else {
+            // Outside Barak Valley - All India Google calculation
+            const cityName = city || (lang === 'en' ? 'India Location' : 'ভারতের অবস্থান');
+            const matchIndia = ALL_INDIA_LOCATIONS.find(
+              (loc) => loc.name.toLowerCase() === cityName.toLowerCase()
+            );
+            if (matchIndia) {
+              setSelectedLocationId(matchIndia.id);
               setLocationStatusMsg(
-                `শনাক্তকৃত নিকটবর্তী: ${city || constituency.nameBn} (~${distanceKm} কিমি • বরাক উপত্যকা)`
+                lang === 'en'
+                  ? `Detected via GPS: ${matchIndia.name} (Google Method)`
+                  : lang === 'ur'
+                  ? `جی پی ایس سے شناخت: ${matchIndia.name} (گوگل طریقہ)`
+                  : `জিপিএস দ্বারা সনাক্তকৃত: ${matchIndia.name} (গুগল পদ্ধতি)`
               );
-            } else {
-              // Outside Barak Valley - All India Google calculation
-              const cityName = city || 'ভারতের অবস্থান';
-              const matchIndia = ALL_INDIA_LOCATIONS.find(
-                (loc) => loc.name.toLowerCase() === cityName.toLowerCase()
-              );
-              if (matchIndia) {
-                setSelectedLocationId(matchIndia.id);
-                setLocationStatusMsg(`জিপিএস দ্বারা সনাক্তকৃত: ${matchIndia.name} (গুগল পদ্ধতি)`);
-              } else {
-                const customGpsLoc: LocationMeta = {
-                  id: 'gps_detected',
-                  name: cityName,
-                  district: addressObj?.state_district || addressObj?.county || '',
-                  state: addressObj?.state || 'India',
-                  offset: 0,
-                  lat: latitude,
-                  lon: longitude,
-                  isBarakValley: false,
-                  description: `${cityName} (Google Method)`,
-                };
-                setDetectedCustomLocation(customGpsLoc);
-                setSelectedLocationId('gps_detected');
-                setLocationStatusMsg(`জিপিএস দ্বারা সনাক্তকৃত: ${cityName} (গুগল পদ্ধতি)`);
-              }
-            }
-          } catch {
-            if (isWithinBarakValley(latitude, longitude)) {
-              const { constituency } = findClosestConstituency(latitude, longitude);
-              setUserCity(constituency.nameBn);
-              setSelectedLocationId(constituency.id);
-              setLocationStatusMsg(`শনাক্তকৃত বিধানসভা: ${constituency.nameBn} (বরাক উপত্যকা)`);
             } else {
               const customGpsLoc: LocationMeta = {
                 id: 'gps_detected',
-                name: 'বর্তমান অবস্থান',
-                district: '',
-                state: 'India',
+                name: cityName,
+                district: addressObj?.state_district || addressObj?.county || '',
+                state: addressObj?.state || 'India',
                 offset: 0,
                 lat: latitude,
                 lon: longitude,
                 isBarakValley: false,
-                description: 'বর্তমান অবস্থান (গুগল পদ্ধতি)',
+                description: `${cityName} (Google Method)`,
               };
               setDetectedCustomLocation(customGpsLoc);
               setSelectedLocationId('gps_detected');
-              setLocationStatusMsg('জিপিএস স্থানাঙ্ক দ্বারা গুগল পদ্ধতি প্রয়োগ করা হয়েছে');
+              setLocationStatusMsg(
+                lang === 'en'
+                  ? `Detected via GPS: ${cityName} (Google Method)`
+                  : lang === 'ur'
+                  ? `جی پی ایس سے شناخت: ${cityName} (گوگل طریقہ)`
+                  : `জিপিএস দ্বারা সনাক্তকৃত: ${cityName} (গুগল পদ্ধতি)`
+              );
             }
-          } finally {
-            setIsDetectingLocation(false);
           }
-        },
-        async (error) => {
-          setIsDetectingLocation(false);
-          if (error && error.code === 1) {
-            setLocationStatusMsg('লোকেশন পারমিশন মেলেনি। ডিফল্টভাবে শিলচর সেট করা আছে।');
+        } catch {
+          if (isWithinBarakValley(latitude, longitude)) {
+            const { constituency } = findClosestConstituency(latitude, longitude);
+            const constName = lang === 'en' ? constituency.name : constituency.nameBn;
+            setUserCity(constName);
+            setSelectedLocationId(constituency.id);
+            setLocationStatusMsg(
+              lang === 'en'
+                ? `Detected Constituency: ${constName} (Barak Valley)`
+                : lang === 'ur'
+                ? `شناخت شدہ حلقہ: ${constituency.name} (براک وادی)`
+                : `শনাক্তকৃত বিধানসভা: ${constituency.nameBn} (বরাক উপত্যকা)`
+            );
           } else {
-            await tryIpFallback();
+            const customGpsLoc: LocationMeta = {
+              id: 'gps_detected',
+              name: lang === 'en' ? 'Current Location' : 'বর্তমান অবস্থান',
+              district: '',
+              state: 'India',
+              offset: 0,
+              lat: latitude,
+              lon: longitude,
+              isBarakValley: false,
+              description: lang === 'en' ? 'Current Location (Google Method)' : 'বর্তমান অবস্থান (গুগল পদ্ধতি)',
+            };
+            setDetectedCustomLocation(customGpsLoc);
+            setSelectedLocationId('gps_detected');
+            setLocationStatusMsg(
+              lang === 'en'
+                ? 'Applied Google calculation via GPS coordinates'
+                : lang === 'ur'
+                ? 'جی پی ایس سے گوگل طریقہ لاگو کیا گیا'
+                : 'জিপিএস স্থানাঙ্ক দ্বারা গুগল পদ্ধতি প্রয়োগ করা হয়েছে'
+            );
           }
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      };
+
+      // Try High Accuracy GPS first with zero cache for fresh fix
+      navigator.geolocation.getCurrentPosition(
+        handleCoordsSuccess,
+        (highAccError) => {
+          // If high accuracy fails or times out, try standard accuracy
+          navigator.geolocation.getCurrentPosition(
+            handleCoordsSuccess,
+            async (finalError) => {
+              setIsDetectingLocation(false);
+              if (finalError && finalError.code === 1) {
+                setLocationStatusMsg(
+                  lang === 'en'
+                    ? 'Location permission denied. Defaulted to Silchar.'
+                    : lang === 'ur'
+                    ? 'مقام کی اجازت نہیں ملی۔ سلچر طے ہے۔'
+                    : 'লোকেশন পারমিশন মেলেনি। ডিফল্টভাবে শিলচর সেট করা আছে।'
+                );
+              } else {
+                await tryIpFallback();
+              }
+            },
+            { timeout: 10000, enableHighAccuracy: false, maximumAge: 60000 }
+          );
         },
-        { timeout: 8000, enableHighAccuracy: false, maximumAge: 300000 }
+        { timeout: 12000, enableHighAccuracy: true, maximumAge: 0 }
       );
     } else {
       setIsDetectingLocation(false);
@@ -724,6 +837,7 @@ export default function App() {
                   mosqueName={mosqueName}
                   hijriAdjustment={hijriAdjustment}
                   onOpenArabicCalendar={() => setActiveTab('arabic')}
+                  lang={lang}
                 />
 
                 {/* 6 Prayer Cards for the Day */}
@@ -741,15 +855,19 @@ export default function App() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                     <div>
                       <h3 className="font-bold text-base flex items-center gap-2">
-                        <span>🕌 আপনার মসজিদের জামাত সেটিং</span>
+                        <span>🕌 {lang === 'en' ? 'Your Mosque Jamaat Settings' : lang === 'ur' ? 'آپ کی مسجد کے جماعت کے اوقات' : 'আপনার মসজিদের জামাত সেটিং'}</span>
                         {mosqueName && (
                           <span className="text-xs font-normal text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                            সক্রিয়: {mosqueName}
+                            {lang === 'en' ? 'Active: ' : lang === 'ur' ? 'فعال: ' : 'সক্রিয়: '}{mosqueName}
                           </span>
                         )}
                       </h3>
                       <p className="text-xs text-[#90A8A3] mt-0.5">
-                        ভারতীয় ১২-ঘণ্টা সময় (AM/PM) ফরম্যাটে প্রতিটি ওয়াক্তের জামাত সময় সেট করুন
+                        {lang === 'en'
+                          ? 'Set your local mosque jamaat congregation times (12-hr AM/PM format)'
+                          : lang === 'ur'
+                          ? 'مقامی مسجد کے لیے جماعت کے اوقات سیٹ کریں'
+                          : 'ভারতীয় ১২-ঘণ্টা সময় (AM/PM) ফরম্যাটে প্রতিটি ওয়াক্তের জামাত সময় সেট করুন'}
                       </p>
                     </div>
 
@@ -765,16 +883,16 @@ export default function App() {
                         });
                       }}
                       className="px-2.5 py-1.5 text-xs font-medium text-amber-300 bg-amber-950/70 hover:bg-amber-900 border border-amber-800/80 rounded-lg transition-colors flex items-center gap-1.5 self-start sm:self-auto cursor-pointer shadow-xs"
-                      title="বরাক উপত্যকার আদর্শ ভারতীয় জামাতের সময়সূচী স্বয়ংক্রিয় পূরণ"
+                      title={lang === 'en' ? 'Auto-fill standard Indian prayer times' : 'বরাক উপত্যকার আদর্শ ভারতীয় জামাতের সময়সূচী স্বয়ংক্রিয় পূরণ'}
                     >
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      <span>আদর্শ ভারতীয় সময় পূরণ</span>
+                      <span>{lang === 'en' ? 'Auto-fill standard times' : lang === 'ur' ? 'معیاری اوقات خودکار بھریں' : 'আদর্শ ভারতীয় সময় পূরণ'}</span>
                     </button>
                   </div>
                   
                   <input 
                     type="text" 
-                    placeholder="মসজিদের নাম লিখুন (যেমন: কোটামনি বাজার জামে মসজিদ)" 
+                    placeholder={lang === 'en' ? 'Enter mosque name (e.g. Kotamoni Bazar Jame Masjid)' : lang === 'ur' ? 'مسجد کا نام درج کریں' : 'মসজিদের নাম লিখুন (যেমন: কোটামনি বাজার জামে মসজিদ)'} 
                     value={mosqueName} 
                     onChange={(e) => setMosqueName(e.target.value)}
                     className="p-2.5 rounded-lg bg-[#03221F] w-full mb-3 text-white border border-white/10 focus:border-[#E2A336] focus:outline-none text-sm placeholder-[#90A8A3]"

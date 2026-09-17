@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon, Smartphone } from 'lucide-react';
-import { LocationMeta } from '../types';
+import { LocationMeta, AppLanguage } from '../types';
 import { playPrayerChime } from '../utils/audioAlert';
 import { calculateHijriFromDate, toBengaliNumerals } from '../utils/hijriCalendar';
+import { TRANSLATIONS } from '../utils/translations';
 
 interface HeaderProps {
   locations: LocationMeta[];
@@ -30,6 +31,7 @@ interface HeaderProps {
   onOpenArabicCalendar?: () => void;
   onOpenInstallHelp?: () => void;
   onOpenLocationPicker?: () => void;
+  lang?: AppLanguage;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -58,7 +60,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenArabicCalendar,
   onOpenInstallHelp,
   onOpenLocationPicker,
+  lang = 'en',
 }) => {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const [districtFilter, setDistrictFilter] = useState<'all' | 'Cachar' | 'Hailakandi' | 'Karimganj'>('all');
 
   const selectedLoc = locations.find((l) => l.id === selectedLocationId) || locations[0];
@@ -85,11 +89,11 @@ export const Header: React.FC<HeaderProps> = ({
               <Clock className="w-5 h-5" />
             </span>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              Prayer &amp; Fasting Timetable
+              {t.prayerTimetableTitle}
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-emerald-300/80 mt-1">
-            Barak Valley Constituencies: Cachar (ক্যাছাড়), Hailakandi (হাইলাকান্দি) &amp; Karimganj (করিমগঞ্জ)
+            {t.barakConstituenciesSub}
           </p>
         </div>
 
@@ -150,14 +154,14 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-amber-400 text-emerald-950 border-amber-300 font-semibold shadow-amber-950/20'
                 : 'bg-emerald-900 hover:bg-emerald-800 border-emerald-700/50 text-emerald-200 hover:text-white'
             }`}
-            title="GPS দিয়ে আপনার শহরের নাম ও স্থানীয় সময় সনাক্ত করুন"
+            title={lang === 'bn' ? 'GPS দিয়ে আপনার শহরের নাম ও স্থানীয় সময় সনাক্ত করুন' : 'Auto-detect city via GPS'}
           >
             {isDetectingLocation ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
             ) : (
               <LocateFixed className={`w-3.5 h-3.5 ${userCity ? 'text-emerald-950' : 'text-amber-300'}`} />
             )}
-            <span>{isDetectingLocation ? 'শনাক্ত হচ্ছে...' : userCity ? `📍 ${userCity}` : 'GPS লোকেশন'}</span>
+            <span>{isDetectingLocation ? t.detectingLocation : userCity ? `📍 ${userCity}` : t.detectLocation}</span>
           </button>
 
           {/* Arabic / Hijri Calendar Button */}
@@ -166,12 +170,14 @@ export const Header: React.FC<HeaderProps> = ({
               id="open-arabic-calendar-header-btn"
               onClick={onOpenArabicCalendar}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700/60 text-xs font-medium text-amber-300 hover:text-amber-200 transition-colors cursor-pointer shadow-xs whitespace-nowrap group"
-              title="আরবী ক্যালেন্ডার খুলুন"
+              title={lang === 'en' ? 'Open Hijri Calendar' : lang === 'ur' ? 'ہجری کیلنڈر کھولیں' : 'আরবী ক্যালেন্ডার খুলুন'}
             >
-              <span className="font-semibold">🌙 {hijriDate.formattedBn}</span>
-              <span className="text-[11px] text-emerald-200/90 font-mono hidden sm:inline">
-                ({hijriDate.formattedEn})
-              </span>
+              <span className="font-semibold">🌙 {lang === 'en' ? hijriDate.formattedEn : lang === 'ur' ? (hijriDate.formattedUr || hijriDate.formattedAr) : hijriDate.formattedBn}</span>
+              {lang !== 'en' && (
+                <span className="text-[11px] text-emerald-200/90 font-mono hidden sm:inline">
+                  ({hijriDate.formattedEn})
+                </span>
+              )}
             </button>
           )}
 
@@ -181,10 +187,10 @@ export const Header: React.FC<HeaderProps> = ({
               id="open-mosque-modal-btn"
               onClick={onOpenMosqueSettings}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700/50 text-xs font-medium text-emerald-200 hover:text-white transition-colors cursor-pointer shadow-xs"
-              title="মসজিদের নাম ও জামাতের সময়সূচী কনফিগার করুন"
+              title="Configure Mosque name & Jamaat times"
             >
               <Building2 className="w-3.5 h-3.5 text-amber-300" />
-              <span>{mosqueName ? `🕌 ${mosqueName}` : '🕌 জামাত সময়'}</span>
+              <span>{mosqueName ? `🕌 ${mosqueName}` : lang === 'en' ? '🕌 Jamaat Times' : lang === 'ur' ? '🕌 جماعت وقت' : '🕌 জামাত সময়'}</span>
             </button>
           )}
 
@@ -194,10 +200,10 @@ export const Header: React.FC<HeaderProps> = ({
               id="open-install-help-btn"
               onClick={onOpenInstallHelp}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-800/90 hover:bg-emerald-700 border border-emerald-600/50 text-xs font-medium text-emerald-100 hover:text-white transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-              title="অ্যাপ ফোনে ইনস্টল ও সিকিউরিটি নির্দেশিকা"
+              title="Install Guide"
             >
               <Smartphone className="w-3.5 h-3.5 text-amber-300" />
-              <span>ইনস্টল গাইড</span>
+              <span>{t.installGuide}</span>
             </button>
           )}
 
@@ -207,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="open-location-picker-btn"
               onClick={onOpenLocationPicker}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
-              title="স্থান বেছে নিন: বরাক উপত্যকার আসল সময় বা ভারতের যে কোন শহর"
+              title="Change location"
             >
               <MapPin className="w-3.5 h-3.5" />
               <span>
@@ -270,16 +276,16 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 onClick={() => onSelectLocation('silchar')}
                 className="px-2.5 py-1 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-emerald-100 text-xs font-semibold transition-colors flex items-center gap-1"
-                title="বরাক উপত্যকার সময়সূচীতে ফিরে যান"
+                title="Go to Barak Valley schedule"
               >
-                <span>🌿 বরাক উপত্যকায় যান</span>
+                <span>{lang === 'en' ? '🌿 Barak Valley' : lang === 'ur' ? '🌿 وادی براک' : '🌿 বরাক উপত্যকায় যান'}</span>
               </button>
               {onOpenLocationPicker && (
                 <button
                   onClick={onOpenLocationPicker}
                   className="px-2.5 py-1 rounded-lg bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] text-xs font-bold transition-colors"
                 >
-                  শহর পরিবর্তন
+                  {t.changeLocation}
                 </button>
               )}
             </div>
@@ -291,7 +297,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-1.5 text-xs flex-wrap">
             <span className="text-emerald-300 font-medium flex items-center gap-1 shrink-0 mr-1">
               <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              Barak Valley:
+              {lang === 'en' ? 'Barak Valley:' : lang === 'ur' ? 'وادی براک:' : 'বরাক উপত্যকা:'}
             </span>
             <button
               id="filter-district-all"
@@ -302,7 +308,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'bg-emerald-950/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/30'
               }`}
             >
-              All ({locations.length})
+              {lang === 'en' ? 'All' : lang === 'ur' ? 'تمام' : 'সকল'} ({locations.length})
             </button>
             <button
               id="filter-district-cachar"
@@ -313,7 +319,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'bg-emerald-950/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/30'
               }`}
             >
-              Cachar (ক্যাছাড়)
+              Cachar {lang === 'bn' ? '(ক্যাছাড়)' : ''}
             </button>
             <button
               id="filter-district-hailakandi"
@@ -324,7 +330,7 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'bg-emerald-950/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/30'
               }`}
             >
-              Hailakandi (হাইলাকান্দি)
+              Hailakandi {lang === 'bn' ? '(হাইলাকান্দি)' : ''}
             </button>
             <button
               id="filter-district-karimganj"
@@ -335,15 +341,15 @@ export const Header: React.FC<HeaderProps> = ({
                   : 'bg-emerald-950/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/30'
               }`}
             >
-              Karimganj (করিমগঞ্জ)
+              Karimganj {lang === 'bn' ? '(করিমগঞ্জ)' : ''}
             </button>
             {onOpenLocationPicker && (
               <button
                 onClick={onOpenLocationPicker}
                 className="px-2.5 py-1 rounded-md text-xs font-bold bg-[#E2A336]/20 hover:bg-[#E2A336]/30 text-amber-200 border border-[#E2A336]/40 transition-colors flex items-center gap-1 ml-1"
-                title="ভারতের যে কোন শহরের জন্য গুগল সময় দেখুন"
+                title="Google Prayer Calculation for All India"
               >
-                <span>🇮🇳 পুরা ভারত (Google)</span>
+                <span>{lang === 'en' ? '🇮🇳 All India (Google)' : lang === 'ur' ? '🇮🇳 تمام ہندوستان' : '🇮🇳 পুরা ভারত (Google)'}</span>
               </button>
             )}
           </div>
@@ -352,20 +358,20 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
             <span className="text-xs text-emerald-300 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5" />
-              Date:
+              {lang === 'en' ? 'Date:' : lang === 'ur' ? 'تاریخ:' : 'তারিখ:'}
             </span>
             <button
               id="quick-date-today"
               onClick={() => onSelectDate(new Date())}
               className="px-2 py-0.5 rounded text-xs bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 border border-emerald-600/40"
             >
-              Today
+              {lang === 'en' ? 'Today' : lang === 'ur' ? 'آج' : 'আজ'}
             </button>
             <button
               id="quick-date-today-formatted"
               onClick={() => onSelectDate(new Date())}
               className="px-3 py-1 bg-emerald-950 text-emerald-400 rounded text-xs font-mono border border-emerald-800/50 hover:bg-emerald-900 transition-colors"
-              title="আজকের তারিখে যান"
+              title="Go to today's date"
             >
               {todayFormattedDate}
             </button>
@@ -375,7 +381,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Constituencies Horizontal Scrolling List */}
         <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
           <span className="text-xs font-medium text-emerald-300 shrink-0">
-            Constituencies:
+            {lang === 'en' ? 'Constituencies:' : lang === 'ur' ? 'حلقے:' : 'বিধানসভা:'}
           </span>
 
           {filteredLocations.map((loc) => {

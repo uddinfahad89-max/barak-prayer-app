@@ -481,13 +481,23 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                   <span className="text-xl shrink-0">💍</span>
                   <div className="flex-1">
                     <div className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
-                      <span>{t.matrimony}: ইমাম নিযুক্তি ও পাত্র-পাত্রী</span>
+                      <span>
+                        {lang === 'en'
+                          ? `${t.matrimony}: Imam Recruitment & Matrimony`
+                          : lang === 'ur'
+                          ? `${t.matrimony}: ائمہ کی تقرری اور رشتہ داری`
+                          : `${t.matrimony}: ইমাম নিযুক্তি ও পাত্র-পাত্রী`}
+                      </span>
                       <span className="text-[9px] px-1.5 py-0.2 bg-[#E2A336] text-[#03221F] font-bold rounded-full">
-                        নতুন
+                        {t.newBadge}
                       </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-[#90A8A3] leading-snug mt-0.5">
-                      মসজিদের নিয়োগ, ইমামদের বায়োডাটা ও দ্বীনি পাত্র-পাত্রীর খোঁজ
+                      {lang === 'en'
+                        ? 'Mosque vacancies, Imam biodatas & Islamic matrimonial matches'
+                        : lang === 'ur'
+                        ? 'مساجد میں آسامیاں، ائمہ کرام کے بائیو ڈیٹا اور شرعی رشتے'
+                        : 'মসজিদের নিয়োগ, ইমামদের বায়োডাটা ও দ্বীনি পাত্র-পাত্রীর খোঁজ'}
                     </p>
                   </div>
                   <ChevronRight className={`w-4 h-4 text-[#E2A336] group-hover:translate-x-0.5 transition-transform shrink-0 ${lang === 'ur' ? 'rotate-180' : ''}`} />

@@ -31,6 +31,7 @@ import { DEFAULT_UMRAH_PACKAGES } from '../data/defaultUmrahPackages';
 import { UmrahPackageFormModal } from './UmrahPackageFormModal';
 import { UmrahPackageDetailModal } from './UmrahPackageDetailModal';
 import { ImamPortalModal } from './ImamPortalModal';
+import { TRANSLATIONS } from '../utils/translations';
 
 interface DuaRequest {
   id: string;
@@ -83,6 +84,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
   lang = 'bn',
   onNavigateToMatrimony,
 }) => {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   // Main Sub-Tab: 'umrah' vs 'duas'
   const [activeSubTab, setActiveSubTab] = useState<'umrah' | 'duas'>('umrah');
 
@@ -253,14 +255,14 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-bold text-white">
-                  উমরাহ প্যাকেজ ও উম্মাহ প্ল্যাটফর্ম
+                  {t.umrahPortalTitle}
                 </h2>
                 <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E2A336] text-[#03221F]">
-                  পবিত্র কাফেলা
+                  {lang === 'en' ? 'Holy Journey' : lang === 'ur' ? 'مقدس سفر' : 'পবিত্র কাফেলা'}
                 </span>
               </div>
               <p className="text-xs text-emerald-300/80 mt-0.5">
-                উমরাহ ট্রাভেলস কোম্পানির প্যাকেজসমূহ ও বিশ্বস্ত এজেন্সির সাথে সরাসরি বুকিং
+                {t.umrahPortalSubtitle}
               </p>
             </div>
           </div>
@@ -271,7 +273,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>এজেন্সির প্যাকেজ যোগ করুন</span>
+              <span>{t.addUmrahPackage}</span>
             </button>
           </div>
         </div>
@@ -287,7 +289,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
             }`}
           >
             <Plane className="w-3.5 h-3.5" />
-            <span className="truncate">উমরাহ প্যাকেজ ({packages.length})</span>
+            <span className="truncate">{t.umrahTab} ({packages.length})</span>
           </button>
 
           <button
@@ -299,7 +301,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span className="truncate">উম্মাহ দোয়া ওয়াল ({duas.length})</span>
+            <span className="truncate">{t.duaWallTab} ({duas.length})</span>
           </button>
         </div>
       </div>
@@ -310,15 +312,19 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
           {/* Mobile "Add Package" banner */}
           <div className="sm:hidden bg-[#072c27] border border-[#E2A336]/30 rounded-xl p-3 flex items-center justify-between gap-2">
             <div className="text-xs text-white">
-              <span className="font-bold text-[#E2A336]">উমরাহ ট্রাভেলস কোম্পানি?</span>
-              <p className="text-[11px] text-emerald-300/80">আপনার প্যাকেজের ডিটেইল পূরণ করুন</p>
+              <span className="font-bold text-[#E2A336]">
+                {lang === 'en' ? 'Umrah Travels Agency?' : lang === 'ur' ? 'عمرہ ٹریول ایجنسی؟' : 'উমরাহ ট্রাভেলস কোম্পানি?'}
+              </span>
+              <p className="text-[11px] text-emerald-300/80">
+                {lang === 'en' ? 'Submit your package details' : lang === 'ur' ? 'اپنے پیکیج کی تفصیلات درج کریں' : 'আপনার প্যাকেজের ডিটেইল পূরণ করুন'}
+              </p>
             </div>
             <button
               onClick={() => setIsFormModalOpen(true)}
               className="px-3 py-1.5 rounded-lg bg-[#E2A336] text-[#03221F] font-bold text-xs flex items-center gap-1 shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>প্যাকেজ দিন</span>
+              <span>{lang === 'en' ? 'Add Package' : lang === 'ur' ? 'پیکیج دیں' : 'প্যাকেজ দিন'}</span>
             </button>
           </div>
 
@@ -329,7 +335,13 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
               <Search className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="এজেন্সির নাম, শহর (শিলচর, করিমগঞ্জ, কলকাতা) বা হোটেল খুঁজুন..."
+                placeholder={
+                  lang === 'en'
+                    ? 'Search agency name, city (Silchar, Karimganj, Kolkata) or hotel...'
+                    : lang === 'ur'
+                    ? 'ایجنسی کا نام، شہر یا ہوٹل تلاش کریں...'
+                    : 'এজেন্সির নাম, শহর (শিলচর, করিমগঞ্জ, কলকাতা) বা হোটেল খুঁজুন...'
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-[#03221F] border border-emerald-700/60 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-white placeholder-emerald-400/40 focus:outline-none focus:border-[#E2A336]"
@@ -339,7 +351,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-emerald-400 hover:text-white"
                 >
-                  মুছুন
+                  {lang === 'en' ? 'Clear' : lang === 'ur' ? 'صاف کریں' : 'মুছুন'}
                 </button>
               )}
             </div>
@@ -354,7 +366,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                     : 'bg-[#03221F] text-emerald-200 border border-emerald-800/60 hover:bg-emerald-800/40'
                 }`}
               >
-                সকল প্যাকেজ
+                {lang === 'en' ? 'All Packages' : lang === 'ur' ? 'تمام پیکیجز' : 'সকল প্যাকেজ'}
               </button>
               <button
                 onClick={() => setCategoryFilter('ramadan')}
@@ -364,7 +376,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                     : 'bg-[#03221F] text-emerald-200 border border-emerald-800/60 hover:bg-emerald-800/40'
                 }`}
               >
-                🌙 রমজান স্পেশাল
+                {lang === 'en' ? '🌙 Ramadan Special' : lang === 'ur' ? '🌙 رمضان اسپیشل' : '🌙 রমজান স্পেশাল'}
               </button>
               <button
                 onClick={() => setCategoryFilter('economy')}
@@ -374,7 +386,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                     : 'bg-[#03221F] text-emerald-200 border border-emerald-800/60 hover:bg-emerald-800/40'
                 }`}
               >
-                🌟 সাশ্রয়ী ইকোনমি
+                {lang === 'en' ? '🌟 Economy' : lang === 'ur' ? '🌟 معاشی' : '🌟 সাশ্রয়ী ইকোনমি'}
               </button>
               <button
                 onClick={() => setCategoryFilter('deluxe')}
@@ -384,7 +396,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                     : 'bg-[#03221F] text-emerald-200 border border-emerald-800/60 hover:bg-emerald-800/40'
                 }`}
               >
-                💎 ৪-স্টার ডিলাক্স
+                {lang === 'en' ? '💎 4-Star Deluxe' : lang === 'ur' ? '💎 ۴-اسٹار ڈیلکس' : '💎 ৪-স্টার ডিলাক্স'}
               </button>
               <button
                 onClick={() => setCategoryFilter('vip')}
@@ -394,7 +406,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                     : 'bg-[#03221F] text-emerald-200 border border-emerald-800/60 hover:bg-emerald-800/40'
                 }`}
               >
-                👑 ৫-স্টার ভিআইপি
+                {lang === 'en' ? '👑 5-Star VIP' : lang === 'ur' ? '👑 ۵-اسٹار وی آئی پی' : '👑 ৫-স্টার ভিআইপি'}
               </button>
             </div>
 
@@ -403,35 +415,47 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
               {/* City filters */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
                 <span className="text-emerald-400 font-medium shrink-0 flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> প্রারম্ভিক শহর:
+                  <MapPin className="w-3 h-3" /> {lang === 'en' ? 'Departure City:' : lang === 'ur' ? 'روانگی کا شہر:' : 'প্রারম্ভিক শহর:'}
                 </span>
-                {['all', 'শিলচর', 'করিমগঞ্জ', 'গুয়াহাটি', 'কলকাতা'].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setCityFilter(c)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-medium shrink-0 transition-all ${
-                      cityFilter === c
-                        ? 'bg-emerald-700 text-white font-bold'
-                        : 'bg-[#03221F] text-emerald-300 hover:text-white'
-                    }`}
-                  >
-                    {c === 'all' ? 'সব শহর' : c}
-                  </button>
-                ))}
+                {['all', 'শিলচর', 'করিমগঞ্জ', 'গুয়াহাটি', 'কলকাতা'].map((c) => {
+                  const cityLabel =
+                    c === 'all'
+                      ? (lang === 'en' ? 'All Cities' : lang === 'ur' ? 'تمام شہر' : 'সব শহর')
+                      : c === 'শিলচর' && lang === 'en' ? 'Silchar'
+                      : c === 'করিমগঞ্জ' && lang === 'en' ? 'Karimganj'
+                      : c === 'গুয়াহাটি' && lang === 'en' ? 'Guwahati'
+                      : c === 'কলকাতা' && lang === 'en' ? 'Kolkata'
+                      : c;
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setCityFilter(c)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-medium shrink-0 transition-all ${
+                        cityFilter === c
+                          ? 'bg-emerald-700 text-white font-bold'
+                          : 'bg-[#03221F] text-emerald-300 hover:text-white'
+                      }`}
+                    >
+                      {cityLabel}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Sort by */}
               <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                <span className="text-emerald-400 text-[11px]">ক্রমানুসার:</span>
+                <span className="text-emerald-400 text-[11px]">
+                  {lang === 'en' ? 'Sort by:' : lang === 'ur' ? 'ترتیب:' : 'ক্রমানুসার:'}
+                </span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="bg-[#03221F] border border-emerald-700/60 text-emerald-100 rounded-lg px-2 py-1 text-xs focus:outline-none"
                 >
-                  <option value="default">নতুন প্যাকেজ আগে</option>
-                  <option value="price_low">কম খরচ থেকে বেশি</option>
-                  <option value="price_high">বেশি খরচ থেকে কম</option>
-                  <option value="duration">কম দিন থেকে বেশি</option>
+                  <option value="default">{t.sortNewest || (lang === 'en' ? 'Newest First' : 'নতুন প্যাকেজ আগে')}</option>
+                  <option value="price_low">{lang === 'en' ? 'Price: Low to High' : lang === 'ur' ? 'قیمت: کم سے زیادہ' : 'কম খরচ থেকে বেশি'}</option>
+                  <option value="price_high">{lang === 'en' ? 'Price: High to Low' : lang === 'ur' ? 'قیمت: زیادہ سے کم' : 'বেশি খরচ থেকে কম'}</option>
+                  <option value="duration">{lang === 'en' ? 'Duration: Short to Long' : lang === 'ur' ? 'مدت: کم سے زیادہ' : 'কম দিন থেকে বেশি'}</option>
                 </select>
               </div>
             </div>
@@ -464,11 +488,11 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                           </h4>
                           {pkg.isCustomSubmission ? (
                             <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500 text-[#03221F] font-bold">
-                              ✨ আপনার লিস্টিং
+                              {lang === 'en' ? '✨ Your Listing' : lang === 'ur' ? '✨ آپ کی فہرست' : '✨ আপনার লিস্টিং'}
                             </span>
                           ) : (
                             <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
-                              ✓ অনুমোদিত
+                              {lang === 'en' ? '✓ Verified' : lang === 'ur' ? '✓ تصدیق شدہ' : '✓ অনুমোদিত'}
                             </span>
                           )}
                         </div>
@@ -497,12 +521,12 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                         }`}
                       >
                         {pkg.category === 'ramadan'
-                          ? '🌙 রমজান'
+                          ? (lang === 'en' ? '🌙 Ramadan' : lang === 'ur' ? '🌙 رمضان' : '🌙 রমজান')
                           : pkg.category === 'vip'
-                          ? '👑 ৫-স্টার'
+                          ? (lang === 'en' ? '👑 5-Star' : lang === 'ur' ? '👑 ۵-اسٹار' : '👑 ৫-স্টার')
                           : pkg.category === 'deluxe'
-                          ? '💎 ডিলাক্স'
-                          : '🌟 ইকোনমি'}
+                          ? (lang === 'en' ? '💎 Deluxe' : lang === 'ur' ? '💎 ڈیلکس' : '💎 ডিলাক্স')
+                          : (lang === 'en' ? '🌟 Economy' : lang === 'ur' ? '🌟 معاشی' : '🌟 ইকোনমি')}
                       </span>
 
                       {/* If added by user, show delete button */}
@@ -510,7 +534,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                         <button
                           onClick={(e) => handleDeletePackage(pkg.id, e)}
                           className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors"
-                          title="প্যাকেজটি মুছুন"
+                          title={lang === 'en' ? 'Delete package' : lang === 'ur' ? 'پیکیج حذف کریں' : 'প্যাকেজটি মুছুন'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -526,17 +550,19 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                       </h3>
                       <div className="text-[11px] text-emerald-200/80 flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className="font-semibold text-[#E2A336]">
-                          ⏱️ {pkg.durationDays} দিন
+                          ⏱️ {pkg.durationDays} {lang === 'en' ? 'Days' : lang === 'ur' ? 'دن' : 'দিন'}
                         </span>
                         <span>•</span>
-                        <span>🛫 প্রারম্ভিক: {pkg.departureCity}</span>
+                        <span>🛫 {lang === 'en' ? 'From:' : lang === 'ur' ? 'روانگی:' : 'প্রারম্ভিক:'} {pkg.departureCity}</span>
                         <span>•</span>
-                        <span>📅 কাফেলা: {pkg.departureMonthOrDate}</span>
+                        <span>📅 {lang === 'en' ? 'Date:' : lang === 'ur' ? 'تاریخ:' : 'কাফেলা:'} {pkg.departureMonthOrDate}</span>
                       </div>
                     </div>
 
                     <div className="text-left sm:text-right shrink-0">
-                      <span className="text-[10px] text-emerald-300/80 block">সর্বমোট জনপ্রতি</span>
+                      <span className="text-[10px] text-emerald-300/80 block">
+                        {lang === 'en' ? 'Total per person' : lang === 'ur' ? 'کل فی کس' : 'সর্বমোট জনপ্রতি'}
+                      </span>
                       <div className="text-xl sm:text-2xl font-black text-[#E2A336]">
                         ₹{pkg.pricePerPerson.toLocaleString('en-IN')}
                       </div>
@@ -548,13 +574,13 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                     <div className="flex items-center gap-1.5 text-amber-300">
                       <Hotel className="w-3.5 h-3.5 shrink-0" />
                       <span>
-                        <strong>মক্কা:</strong> {pkg.makkahHotel} (~{pkg.makkahDistanceMeters}মি.)
+                        <strong>{lang === 'en' ? 'Makkah:' : lang === 'ur' ? 'مکہ:' : 'মক্কা:'}</strong> {pkg.makkahHotel} (~{pkg.makkahDistanceMeters}{lang === 'en' ? 'm' : 'মি.'})
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 text-emerald-300">
                       <Hotel className="w-3.5 h-3.5 shrink-0" />
                       <span>
-                        <strong>মদিনা:</strong> {pkg.madinahHotel} (~{pkg.madinahDistanceMeters}মি.)
+                        <strong>{lang === 'en' ? 'Madinah:' : lang === 'ur' ? 'مدینہ:' : 'মদিনা:'}</strong> {pkg.madinahHotel} (~{pkg.madinahDistanceMeters}{lang === 'en' ? 'm' : 'মি.'})
                       </span>
                     </div>
                   </div>
@@ -572,7 +598,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                     ))}
                     {pkg.inclusions.length > 4 && (
                       <span className="text-[10px] text-emerald-400 font-semibold">
-                        +{pkg.inclusions.length - 4} টি সুবিধা
+                        +{pkg.inclusions.length - 4} {lang === 'en' ? 'more benefits' : lang === 'ur' ? 'مزید سہولیات' : 'টি সুবিধা'}
                       </span>
                     )}
                   </div>
@@ -588,7 +614,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                         className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold flex items-center gap-1.5 transition-all shadow-xs"
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-white" />
-                        <span>WhatsApp এ চ্যাট</span>
+                        <span>{lang === 'en' ? 'WhatsApp' : lang === 'ur' ? 'واٹس ایپ' : 'WhatsApp এ চ্যাট'}</span>
                       </a>
 
                       <a
@@ -597,7 +623,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                         className="px-3 py-1.5 rounded-xl bg-[#03221F] hover:bg-emerald-900/60 text-white border border-emerald-700 font-semibold flex items-center gap-1.5 transition-colors"
                       >
                         <Phone className="w-3.5 h-3.5 text-[#E2A336]" />
-                        <span className="hidden sm:inline">কল করুন</span>
+                        <span className="hidden sm:inline">{t.callDirect}</span>
                       </a>
                     </div>
 
@@ -605,7 +631,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                       onClick={() => setSelectedDetailPkg(pkg)}
                       className="px-3 py-1.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 font-bold flex items-center gap-1 transition-colors"
                     >
-                      <span>বিস্তারিত</span>
+                      <span>{t.viewDetails}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -616,9 +642,13 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
             {filteredPackages.length === 0 && (
               <div className="text-center py-10 bg-[#09332E]/40 border border-emerald-800/40 rounded-2xl p-6 space-y-3">
                 <Plane className="w-10 h-10 text-emerald-500/60 mx-auto" />
-                <h4 className="text-base font-bold text-white">কোন প্যাকেজ পাওয়া যায়নি</h4>
+                <h4 className="text-base font-bold text-white">{t.noDataFound}</h4>
                 <p className="text-xs text-emerald-300/80 max-w-sm mx-auto">
-                  আপনার অনুসন্ধান বা ফিল্টারের সাথে মিলে এমন কোনো উমরাহ প্যাকেজ এই মুহূর্তে নেই।
+                  {lang === 'en'
+                    ? 'No Umrah packages match your search or filter criteria.'
+                    : lang === 'ur'
+                    ? 'آپ کی تلاش کے مطابق کوئی عمرہ پیکیج دستیاب نہیں ہے۔'
+                    : 'আপনার অনুসন্ধান বা ফিল্টারের সাথে মিলে এমন কোনো উমরাহ প্যাকেজ এই মুহূর্তে নেই।'}
                 </p>
                 <button
                   onClick={() => {
@@ -628,7 +658,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                   }}
                   className="px-4 py-2 rounded-xl bg-[#E2A336] text-[#03221F] font-bold text-xs"
                 >
-                  ফিল্টার রিসেট করুন
+                  {t.resetFilter}
                 </button>
               </div>
             )}
@@ -647,14 +677,14 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
-                        ইমাম নিযুক্তি, মসজিদ ও দ্বীনি পাত্র-পাত্রী পোর্টাল
+                        {t.matrimonyPortalTitle}
                       </h3>
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#E2A336] text-[#03221F]">
-                        নতুন সেবা
+                        {t.newBadge}
                       </span>
                     </div>
                     <p className="text-xs text-emerald-200/90 mt-0.5">
-                      উমরাহের পর দ্বীনি উম্মাহর সেবায় ইমাম নিযুক্তি এবং শরীয়াহসম্মত সুন্নতি বিবাহের বায়োডাটা
+                      {t.matrimonyPortalSubtitle}
                     </p>
                   </div>
                 </div>
@@ -667,7 +697,7 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                   }}
                   className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                 >
-                  <span>সম্পূর্ণ পোর্টাল খুলুন</span>
+                  <span>{lang === 'en' ? 'Open Full Portal' : lang === 'ur' ? 'مکمل پورٹل کھولیں' : 'সম্পূর্ণ পোর্টাল খুলুন'}</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -687,14 +717,14 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                       <HeartHandshake className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors">
-                      দ্বীনি পাত্র-পাত্রী (নিকাহ)
+                      {t.subtabMatrimony}
                     </h4>
                   </div>
                   <p className="text-[11px] text-emerald-300/80 leading-snug">
-                    বর ও কনের শরীয়াহসম্মত ইসলামিক বায়োডাটা ও অভিভাবকদের সাথে যোগাযোগ
+                    {t.subtabMatrimonyDesc}
                   </p>
                   <div className="mt-2.5 pt-2 border-t border-emerald-800/40 flex items-center justify-between text-[11px] text-[#E2A336] font-bold">
-                    <span>বায়োডাটা দেখুন</span>
+                    <span>{t.viewDetails}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -712,14 +742,14 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                       <Building2 className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors">
-                      মসজিদের নিয়োগ বিজ্ঞপ্তি
+                      {t.subtabMosques}
                     </h4>
                   </div>
                   <p className="text-[11px] text-emerald-300/80 leading-snug">
-                    মসজিদ কমিটির জন্য যোগ্য খতীব, ইমাম, মুয়াজ্জিন ও শিক্ষক নিযুক্তি
+                    {t.subtabMosquesDesc}
                   </p>
                   <div className="mt-2.5 pt-2 border-t border-emerald-800/40 flex items-center justify-between text-[11px] text-[#E2A336] font-bold">
-                    <span>বিজ্ঞপ্তি দেখুন</span>
+                    <span>{t.viewDetails}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -737,14 +767,14 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                       <User className="w-4 h-4" />
                     </div>
                     <h4 className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors">
-                      ইমাম সাহেবের বায়োডাটা
+                      {t.subtabImams}
                     </h4>
                   </div>
                   <p className="text-[11px] text-emerald-300/80 leading-snug">
-                    হাফেজ ও আলেম সাহেবদের মসজিদের খেদমতের আবেদন ও বায়োডাটা
+                    {t.subtabImamsDesc}
                   </p>
                   <div className="mt-2.5 pt-2 border-t border-emerald-800/40 flex items-center justify-between text-[11px] text-[#E2A336] font-bold">
-                    <span>বায়োডাটা দেখুন</span>
+                    <span>{t.viewDetails}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -764,19 +794,31 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
           >
             <div className="text-xs font-bold text-[#E2A336] flex items-center gap-1.5">
               <Sparkles className="w-4 h-4" />
-              <span>আপনার দোয়ার আবেদন জানান:</span>
+              <span>
+                {lang === 'en'
+                  ? 'Submit your prayer / Dua request:'
+                  : lang === 'ur'
+                  ? 'اپنی دعا کی درخواست بھیجیں:'
+                  : 'আপনার দোয়ার আবেদন জানান:'}
+              </span>
             </div>
             <div className="grid grid-cols-1 gap-2">
               <input
                 type="text"
-                placeholder="আপনার নাম (ঐচ্ছিক)"
+                placeholder={lang === 'en' ? 'Your name (optional)' : lang === 'ur' ? 'آپ کا نام (اختیاری)' : 'আপনার নাম (ঐচ্ছিক)'}
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
                 className="w-full bg-[#03221F] border border-emerald-700/60 rounded-xl px-3 py-2 text-xs text-white placeholder-emerald-400/50 focus:outline-none focus:border-[#E2A336]"
               />
               <textarea
                 rows={2}
-                placeholder="কী বিষয়ে উম্মাহর দোয়া চান তা লিখুন..."
+                placeholder={
+                  lang === 'en'
+                    ? 'Write what you would like the Ummah to pray for...'
+                    : lang === 'ur'
+                    ? 'دعا کی درخواست لکھیں...'
+                    : 'কী বিষয়ে উম্মাহর দোয়া চান তা লিখুন...'
+                }
                 value={newDuaText}
                 onChange={(e) => setNewDuaText(e.target.value)}
                 className="w-full bg-[#03221F] border border-emerald-700/60 rounded-xl px-3 py-2 text-xs text-white placeholder-emerald-400/50 focus:outline-none focus:border-[#E2A336] resize-none"
@@ -789,7 +831,13 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                 className="bg-[#E2A336] hover:bg-yellow-400 text-[#03221F] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>দোয়ার আবেদন পাঠান (+৫ কয়েন)</span>
+                <span>
+                  {lang === 'en'
+                    ? 'Submit Dua Request (+5 Coins)'
+                    : lang === 'ur'
+                    ? 'دعا کی درخواست بھیجیں (+5 سکے)'
+                    : 'দোয়ার আবেদন পাঠান (+৫ কয়েন)'}
+                </span>
               </button>
             </div>
           </form>
@@ -820,19 +868,28 @@ export const UmmahView: React.FC<UmmahViewProps> = ({
                 <div className="flex items-center justify-between pt-2 border-t border-emerald-800/40">
                   <span className="text-[10px] text-emerald-300/80 flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-[#E2A336]" />
-                    {item.ameenCount} জন আমিন বলেছেন
+                    {item.ameenCount}{' '}
+                    {lang === 'en'
+                      ? 'people said Ameen'
+                      : lang === 'ur'
+                      ? 'لوگوں نے آمین کہا'
+                      : 'জন আমিন বলেছেন'}
                   </span>
 
                   <button
                     onClick={() => handleAmeen(item.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
+                    className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       item.hasAmeen
                         ? 'bg-emerald-500 text-white shadow-xs'
                         : 'bg-[#03221F] text-emerald-300 hover:text-white border border-emerald-700/50'
                     }`}
                   >
                     <Heart className={`w-3.5 h-3.5 ${item.hasAmeen ? 'fill-white' : ''}`} />
-                    <span>{item.hasAmeen ? 'আমিন বলা হয়েছে' : 'আমিন'}</span>
+                    <span>
+                      {item.hasAmeen
+                        ? (lang === 'en' ? 'Ameen Said' : lang === 'ur' ? 'آمین کہہ دیا' : 'আমিন বলা হয়েছে')
+                        : (lang === 'en' ? 'Say Ameen' : lang === 'ur' ? 'آمین' : 'আমিন')}
+                    </span>
                   </button>
                 </div>
               </div>

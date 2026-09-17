@@ -7,8 +7,6 @@ import {
   MapPin,
   Phone,
   MessageCircle,
-  IndianRupee,
-  Calendar,
   CheckCircle2,
   Share2,
   ShieldCheck,
@@ -16,6 +14,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { ImamBiodata, AppLanguage } from '../types';
+import { getImamDisplay } from '../utils/portalTranslations';
 
 interface ImamBiodataDetailModalProps {
   isOpen: boolean;
@@ -28,12 +27,17 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
   isOpen,
   onClose,
   biodata,
+  lang = 'bn',
 }) => {
   if (!isOpen || !biodata) return null;
 
-  const cleanNumber = biodata.whatsappNumber.replace(/[^0-9]/g, '');
+  const d = getImamDisplay(biodata, lang);
+  const cleanNumber = (biodata.whatsappNumber || biodata.contactPhone).replace(/[^0-9]/g, '');
+
   const message = encodeURIComponent(
-    `আসসালামু আলাইকুম হযরত। আমরা আপনার '${biodata.fullName}' (${biodata.title}) ইমামতির বায়োডাটা দেখেছি। আমাদের মসজিদের ইমাম/খতীব নিয়োগ সংক্রান্ত বিষয়ে আপনার সাথে আলোচনা করতে চাই।`
+    lang === 'en'
+      ? `Assalamu Alaikum Hazrat ${d.fullName}. We came across your profile (${d.title}) on the Barak Islamic App. We would like to discuss appointment for Imam/Khatib in our mosque.`
+      : `আসসালামু আলাইকুম হযরত। আমরা আপনার '${biodata.fullName}' (${biodata.title}) ইমামতির বায়োডাটা দেখেছি। আমাদের মসজিদের ইমাম/খতীব নিয়োগ সংক্রান্ত বিষয়ে আপনার সাথে আলোচনা করতে চাই।`
   );
 
   const handleWhatsApp = () => {
@@ -45,10 +49,10 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
   };
 
   const handleShare = () => {
-    const text = `👳‍♂️ ইমাম সাহেবের বায়োডাটা\nনাম: ${biodata.fullName} (${biodata.title})\nযোগ্যতা: ${biodata.qualification}\nমাদ্রাসা: ${biodata.institution}\nঅভিজ্ঞতা: ${biodata.experienceYears} বছর | বয়স: ${biodata.age} বছর\nবর্তমান জেলা: ${biodata.currentLocation}\nপছন্দের এলাকা: ${biodata.preferredLocation}\nপ্রত্যাশিত হাদিয়া: ₹${biodata.expectedSalary.toLocaleString('en-IN')}\nযোগাযোগ: ${biodata.contactPhone}`;
+    const text = `${d.fullName} (${d.title})\n${lang === 'en' ? 'Qualification' : 'যোগ্যতা'}: ${d.qualification}\n${lang === 'en' ? 'Institution' : 'মাদ্রাসা'}: ${d.institution}\n${lang === 'en' ? 'Experience' : 'অভিজ্ঞতা'}: ${biodata.experienceYears} ${lang === 'en' ? 'years' : 'বছর'} | ${lang === 'en' ? 'Age' : 'বয়স'}: ${biodata.age}\n${lang === 'en' ? 'Location' : 'বর্তমান জেলা'}: ${d.currentLocation}\n${lang === 'en' ? 'Honorarium' : 'প্রত্যাশিত হাদিয়া'}: ₹${biodata.expectedSalary.toLocaleString('en-IN')}\n${lang === 'en' ? 'Contact' : 'যোগাযোগ'}: ${biodata.contactPhone}`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text);
-      alert('ইমাম সাহেবের বায়োডাটা ক্লিপবোর্ডে কপি করা হয়েছে!');
+      alert(lang === 'en' ? 'Imam profile copied to clipboard!' : 'ইমাম সাহেবের বায়োডাটা ক্লিপবোর্ডে কপি করা হয়েছে!');
     }
   };
 
@@ -64,14 +68,14 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#E2A336] text-[#03221F]">
-                  {biodata.title}
+                  {d.title}
                 </span>
                 <span className="text-xs text-emerald-300/80 font-medium">
-                  বয়স: {biodata.age} বছর • {biodata.maritalStatus}
+                  {lang === 'en' ? 'Age' : 'বয়স'}: {biodata.age} {lang === 'en' ? 'years' : 'বছর'} • {d.maritalStatus}
                 </span>
               </div>
               <h3 className="text-base sm:text-lg font-bold text-white mt-0.5">
-                {biodata.fullName}
+                {d.fullName}
               </h3>
             </div>
           </div>
@@ -89,16 +93,16 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
           <div className="bg-gradient-to-r from-[#09332E] to-[#0c433c] border border-[#E2A336]/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
             <div>
               <span className="text-[11px] text-emerald-300/90 font-medium">
-                প্রত্যাশিত মাসিক হাদিয়া / সম্মানী
+                {lang === 'en' ? 'Expected Monthly Honorarium' : 'প্রত্যাশিত মাসিক হাদিয়া / সম্মানী'}
               </span>
               <div className="text-2xl sm:text-3xl font-black text-[#E2A336] flex items-baseline gap-1">
                 <span>₹{biodata.expectedSalary.toLocaleString('en-IN')}</span>
-                <span className="text-xs text-emerald-200/70 font-normal">/ মাস</span>
+                <span className="text-xs text-emerald-200/70 font-normal">/ {lang === 'en' ? 'month' : 'মাস'}</span>
               </div>
               <div className="text-[11px] text-emerald-200/80 mt-1 flex items-center gap-2 flex-wrap">
-                <span>📍 বর্তমান: <strong>{biodata.currentLocation}</strong></span>
+                <span>📍 {lang === 'en' ? 'Current: ' : 'বর্তমান: '}<strong>{d.currentLocation}</strong></span>
                 <span>•</span>
-                <span>🎯 পছন্দের এলাকা: <strong>{biodata.preferredLocation}</strong></span>
+                <span>🎯 {lang === 'en' ? 'Preferred: ' : 'পছন্দের এলাকা: '}<strong>{d.preferredLocation}</strong></span>
               </div>
             </div>
 
@@ -109,14 +113,14 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
                 className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4 fill-white" />
-                <span>WhatsApp এ কথা বলুন</span>
+                <span>{lang === 'en' ? 'WhatsApp' : 'WhatsApp এ কথা বলুন'}</span>
               </button>
               <button
                 onClick={handleCall}
                 className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <Phone className="w-4 h-4" />
-                <span>কল করুন</span>
+                <span>{lang === 'en' ? 'Call Now' : 'কল করুন'}</span>
               </button>
             </div>
           </div>
@@ -125,18 +129,21 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
           <div className="bg-[#09332E]/70 border border-emerald-800/60 rounded-xl p-4 space-y-2">
             <div className="flex items-center gap-2 text-[#E2A336] font-bold text-xs sm:text-sm">
               <GraduationCap className="w-4 h-4" />
-              <span>শিক্ষাগত ও দ্বীনি যোগ্যতা</span>
+              <span>{lang === 'en' ? 'Academic & Religious Qualifications' : 'শিক্ষাগত ও দ্বীনি যোগ্যতা'}</span>
             </div>
             <div className="text-sm font-semibold text-white pl-6">
-              {biodata.qualification}
+              {d.qualification}
             </div>
             <div className="text-xs text-emerald-300/80 pl-6 flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>পড়াশোনার প্রতিষ্ঠান: <strong>{biodata.institution}</strong></span>
+              <span>{lang === 'en' ? 'Institution: ' : 'পড়াশোনার প্রতিষ্ঠান: '}<strong>{d.institution}</strong></span>
             </div>
             <div className="text-xs text-emerald-200/90 pl-6 flex items-center gap-1.5 pt-1">
               <Briefcase className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
-              <span>ইমামতি / শিক্ষকতার অভিজ্ঞতা: <strong>{biodata.experienceYears} বছর</strong></span>
+              <span>
+                {lang === 'en' ? 'Imamat / Teaching Experience: ' : 'ইমামতি / শিক্ষকতার অভিজ্ঞতা: '}
+                <strong>{biodata.experienceYears} {lang === 'en' ? 'years' : 'বছর'}</strong>
+              </span>
             </div>
           </div>
 
@@ -144,10 +151,10 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
           <div className="bg-[#09332E]/70 border border-emerald-800/60 rounded-xl p-4 space-y-2.5">
             <div className="flex items-center gap-2 text-[#E2A336] font-bold text-xs sm:text-sm">
               <ShieldCheck className="w-4 h-4" />
-              <span>বিশেষ দক্ষতা ও খেদমতের ক্ষেত্র</span>
+              <span>{lang === 'en' ? 'Special Skills & Service Areas' : 'বিশেষ দক্ষতা ও খেদমতের ক্ষেত্র'}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {biodata.skills.map((skill, i) => (
+              {d.skills.map((skill, i) => (
                 <div key={i} className="flex items-center gap-2 text-emerald-100 text-xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>{skill}</span>
@@ -157,14 +164,14 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
           </div>
 
           {/* Demanded Facilities */}
-          {biodata.facilitiesDemanded && biodata.facilitiesDemanded.length > 0 && (
+          {d.facilitiesDemanded && d.facilitiesDemanded.length > 0 && (
             <div className="bg-[#09332E]/70 border border-emerald-800/60 rounded-xl p-4 space-y-2">
               <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs">
                 <Heart className="w-4 h-4 text-[#E2A336]" />
-                <span>মসজিদ কমিটি থেকে কাঙ্ক্ষিত সুবিধাসমূহ</span>
+                <span>{lang === 'en' ? 'Requested Facilities from Committee' : 'মসজিদ কমিটি থেকে কাঙ্ক্ষিত সুবিধাসমূহ'}</span>
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
-                {biodata.facilitiesDemanded.map((fac, i) => (
+                {d.facilitiesDemanded.map((fac, i) => (
                   <span
                     key={i}
                     className="px-2.5 py-1 rounded-lg bg-[#03221F] text-emerald-200 border border-emerald-700/40 text-xs"
@@ -177,11 +184,13 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
           )}
 
           {/* Bio notes */}
-          {biodata.bioNotes && (
+          {d.bioNotes && (
             <div className="bg-[#09332E]/70 border border-emerald-800/60 rounded-xl p-4 space-y-2">
-              <div className="font-bold text-white text-xs">ব্যক্তিগত বার্তা ও অনুভূতি</div>
+              <div className="font-bold text-white text-xs">
+                {lang === 'en' ? 'Personal Note & Reflection' : 'ব্যক্তিগত বার্তা ও অনুভূতি'}
+              </div>
               <p className="text-xs text-stone-200 leading-relaxed whitespace-pre-line">
-                {biodata.bioNotes}
+                {d.bioNotes}
               </p>
             </div>
           )}
@@ -194,14 +203,14 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 font-semibold transition-colors cursor-pointer"
           >
             <Share2 className="w-3.5 h-3.5" />
-            <span>বায়োডাটা শেয়ার করুন</span>
+            <span>{lang === 'en' ? 'Share Profile' : 'বায়োডাটা শেয়ার করুন'}</span>
           </button>
 
           <button
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white font-semibold transition-colors cursor-pointer"
           >
-            বন্ধ করুন
+            {lang === 'en' ? 'Close' : 'বন্ধ করুন'}
           </button>
         </div>
       </div>

@@ -28,6 +28,8 @@ import { MatrimonyBiodataFormModal } from './MatrimonyBiodataFormModal';
 import { ImamBiodataDetailModal } from './ImamBiodataDetailModal';
 import { MosqueVacancyDetailModal } from './MosqueVacancyDetailModal';
 import { MatrimonyBiodataDetailModal } from './MatrimonyBiodataDetailModal';
+import { TRANSLATIONS } from '../utils/translations';
+import { getMatrimonyDisplay, getImamDisplay, getMosqueDisplay } from '../utils/portalTranslations';
 
 interface ImamMatrimonyViewProps {
   onAddCoin?: (amount: number) => void;
@@ -40,6 +42,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
   lang = 'bn',
   initialSubTab = 'matrimony',
 }) => {
+  const t = TRANSLATIONS[lang || 'bn'];
   // Main sub-tabs: 'mosques' | 'imams' | 'matrimony'
   const [activeSubTab, setActiveSubTab] = useState<'mosques' | 'imams' | 'matrimony'>(initialSubTab);
 
@@ -49,10 +52,20 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
   // Imam Biodatas state with LocalStorage
   const [imams, setImams] = useState<ImamBiodata[]>(() => {
     try {
-      const saved = localStorage.getItem('imam_biodatas_v1');
+      const saved = localStorage.getItem('imam_biodatas_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const old = localStorage.getItem('imam_biodatas_v1');
+      if (old) {
+        const oldParsed = JSON.parse(old);
+        if (Array.isArray(oldParsed)) {
+          const customOnly = oldParsed.filter((item) => item.isCustomSubmission);
+          if (customOnly.length > 0) {
+            return [...customOnly, ...DEFAULT_IMAM_BIODATAS];
+          }
+        }
       }
     } catch {
       // fallback
@@ -63,10 +76,20 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
   // Mosque Vacancies state with LocalStorage
   const [vacancies, setVacancies] = useState<MosqueVacancy[]>(() => {
     try {
-      const saved = localStorage.getItem('mosque_vacancies_v1');
+      const saved = localStorage.getItem('mosque_vacancies_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const old = localStorage.getItem('mosque_vacancies_v1');
+      if (old) {
+        const oldParsed = JSON.parse(old);
+        if (Array.isArray(oldParsed)) {
+          const customOnly = oldParsed.filter((item) => item.isCustomSubmission);
+          if (customOnly.length > 0) {
+            return [...customOnly, ...DEFAULT_MOSQUE_VACANCIES];
+          }
+        }
       }
     } catch {
       // fallback
@@ -77,10 +100,20 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
   // Matrimony Biodatas state with LocalStorage
   const [matrimonials, setMatrimonials] = useState<MatrimonyBiodata[]>(() => {
     try {
-      const saved = localStorage.getItem('matrimony_biodatas_v1');
+      const saved = localStorage.getItem('matrimony_biodatas_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const old = localStorage.getItem('matrimony_biodatas_v1');
+      if (old) {
+        const oldParsed = JSON.parse(old);
+        if (Array.isArray(oldParsed)) {
+          const customOnly = oldParsed.filter((item) => item.isCustomSubmission);
+          if (customOnly.length > 0) {
+            return [...customOnly, ...DEFAULT_MATRIMONY_BIODATAS];
+          }
+        }
       }
     } catch {
       // fallback
@@ -91,19 +124,19 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
   // Save to LocalStorage
   useEffect(() => {
     try {
-      localStorage.setItem('imam_biodatas_v1', JSON.stringify(imams));
+      localStorage.setItem('imam_biodatas_v2', JSON.stringify(imams));
     } catch {}
   }, [imams]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('mosque_vacancies_v1', JSON.stringify(vacancies));
+      localStorage.setItem('mosque_vacancies_v2', JSON.stringify(vacancies));
     } catch {}
   }, [vacancies]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('matrimony_biodatas_v1', JSON.stringify(matrimonials));
+      localStorage.setItem('matrimony_biodatas_v2', JSON.stringify(matrimonials));
     } catch {}
   }, [matrimonials]);
 
@@ -170,22 +203,46 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
     }
   };
 
+  // Multilingual District Matcher
+  const matchesDistrict = (district: string, area: string, districtEn?: string, areaEn?: string) => {
+    if (districtFilter === 'all') return true;
+    const df = districtFilter.toLowerCase();
+    const map: Record<string, string[]> = {
+      'কাছাড়': ['কাছাড়', 'cachar'],
+      'শিলচর': ['শিলচর', 'silchar'],
+      'করিমগঞ্জ': ['করিমগঞ্জ', 'karimganj'],
+      'হাইলাকান্দি': ['হাইলাকান্দি', 'hailakandi'],
+    };
+    const targets = map[districtFilter] || [df];
+    return targets.some((target) =>
+      district.toLowerCase().includes(target) ||
+      area.toLowerCase().includes(target) ||
+      (districtEn && districtEn.toLowerCase().includes(target)) ||
+      (areaEn && areaEn.toLowerCase().includes(target))
+    );
+  };
+
   // Filtered Mosque Vacancies
   const filteredVacancies = useMemo(() => {
     return vacancies
       .filter((v) => {
-        if (districtFilter !== 'all') {
-          const match =
-            v.district.toLowerCase().includes(districtFilter.toLowerCase()) ||
-            v.area.toLowerCase().includes(districtFilter.toLowerCase());
-          if (!match) return false;
+        if (!matchesDistrict(v.district, v.area, v.districtEn, v.areaEn)) {
+          return false;
         }
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
-          const matchMosque = v.mosqueName.toLowerCase().includes(q);
-          const matchArea = v.area.toLowerCase().includes(q);
-          const matchPos = v.position.toLowerCase().includes(q);
-          const matchQual = v.requiredQualification.toLowerCase().includes(q);
+          const matchMosque =
+            v.mosqueName.toLowerCase().includes(q) ||
+            (v.mosqueNameEn && v.mosqueNameEn.toLowerCase().includes(q));
+          const matchArea =
+            v.area.toLowerCase().includes(q) ||
+            (v.areaEn && v.areaEn.toLowerCase().includes(q));
+          const matchPos =
+            v.position.toLowerCase().includes(q) ||
+            (v.positionEn && v.positionEn.toLowerCase().includes(q));
+          const matchQual =
+            v.requiredQualification.toLowerCase().includes(q) ||
+            (v.requiredQualificationEn && v.requiredQualificationEn.toLowerCase().includes(q));
           if (!matchMosque && !matchArea && !matchPos && !matchQual) return false;
         }
         return true;
@@ -202,17 +259,28 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
     return imams
       .filter((im) => {
         if (districtFilter !== 'all') {
-          const match =
-            im.currentLocation.toLowerCase().includes(districtFilter.toLowerCase()) ||
-            im.preferredLocation.toLowerCase().includes(districtFilter.toLowerCase());
+          const match = matchesDistrict(
+            im.currentLocation,
+            im.preferredLocation,
+            im.currentLocationEn,
+            im.preferredLocationEn
+          );
           if (!match) return false;
         }
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
-          const matchName = im.fullName.toLowerCase().includes(q);
-          const matchTitle = im.title.toLowerCase().includes(q);
-          const matchQual = im.qualification.toLowerCase().includes(q);
-          const matchLoc = im.currentLocation.toLowerCase().includes(q);
+          const matchName =
+            im.fullName.toLowerCase().includes(q) ||
+            (im.fullNameEn && im.fullNameEn.toLowerCase().includes(q));
+          const matchTitle =
+            im.title.toLowerCase().includes(q) ||
+            (im.titleEn && im.titleEn.toLowerCase().includes(q));
+          const matchQual =
+            im.qualification.toLowerCase().includes(q) ||
+            (im.qualificationEn && im.qualificationEn.toLowerCase().includes(q));
+          const matchLoc =
+            im.currentLocation.toLowerCase().includes(q) ||
+            (im.currentLocationEn && im.currentLocationEn.toLowerCase().includes(q));
           if (!matchName && !matchTitle && !matchQual && !matchLoc) return false;
         }
         return true;
@@ -231,19 +299,26 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
         if (matrimonyTypeFilter !== 'all' && mat.type !== matrimonyTypeFilter) {
           return false;
         }
-        if (districtFilter !== 'all') {
-          const match =
-            mat.district.toLowerCase().includes(districtFilter.toLowerCase()) ||
-            mat.area.toLowerCase().includes(districtFilter.toLowerCase());
-          if (!match) return false;
+        if (!matchesDistrict(mat.district, mat.area, mat.districtEn, mat.areaEn)) {
+          return false;
         }
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
-          const matchCode = mat.codeName.toLowerCase().includes(q);
-          const matchName = mat.fullName.toLowerCase().includes(q);
-          const matchEdu = mat.education.toLowerCase().includes(q);
-          const matchProf = mat.profession.toLowerCase().includes(q);
-          const matchArea = mat.area.toLowerCase().includes(q);
+          const matchCode =
+            mat.codeName.toLowerCase().includes(q) ||
+            (mat.codeNameEn && mat.codeNameEn.toLowerCase().includes(q));
+          const matchName =
+            mat.fullName.toLowerCase().includes(q) ||
+            (mat.fullNameEn && mat.fullNameEn.toLowerCase().includes(q));
+          const matchEdu =
+            mat.education.toLowerCase().includes(q) ||
+            (mat.educationEn && mat.educationEn.toLowerCase().includes(q));
+          const matchProf =
+            mat.profession.toLowerCase().includes(q) ||
+            (mat.professionEn && mat.professionEn.toLowerCase().includes(q));
+          const matchArea =
+            mat.area.toLowerCase().includes(q) ||
+            (mat.areaEn && mat.areaEn.toLowerCase().includes(q));
           if (!matchCode && !matchName && !matchEdu && !matchProf && !matchArea) return false;
         }
         return true;
@@ -270,11 +345,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="text-xl sm:text-2xl">🕌</span>
               <h2 className="text-lg sm:text-2xl font-bold text-white tracking-wide">
-                ইমাম, মসজিদ ও দ্বীনি পাত্র-পাত্রী পোর্টাল
+                {t.matrimonyPortalTitle}
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-emerald-200/90 max-w-xl leading-relaxed">
-              মসজিদ কমিটির জন্য যোগ্য ইমাম নিযুক্তি, ইমাম সাহেবদের জন্য খেদমত এবং দ্বীনদার পাত্র-পাত্রীর শরীয়াহসম্মত ইসলামিক বায়োডাটা
+              {t.matrimonyPortalSubtitle}
             </p>
           </div>
 
@@ -286,7 +361,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                 className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ পাত্র/পাত্রীর বায়োডাটা দিন</span>
+                <span>{t.postMatrimonyBtn}</span>
               </button>
             )}
 
@@ -296,7 +371,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                 className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ ইমাম বায়োডাটা দিন</span>
+                <span>{t.postImamBtn}</span>
               </button>
             )}
 
@@ -306,48 +381,183 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                 className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ মসজিদের নিয়োগ দিন</span>
+                <span>{t.postMosqueBtn}</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* 3 Main Sub-Tabs */}
-        <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-emerald-800/60 relative z-10">
+        {/* 3 Main Sub-Tabs: Displayed Line by Line as Requested */}
+        <div className="flex flex-col gap-2.5 mt-4 pt-3 border-t border-emerald-800/60 relative z-10">
+          {/* Sub-Tab 1: Matrimony */}
           <button
+            id="subtab-matrimony-btn"
             onClick={() => setActiveSubTab('matrimony')}
-            className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`w-full p-3 sm:p-3.5 rounded-2xl font-bold transition-all flex items-center justify-between gap-3 text-left cursor-pointer group shadow-sm ${
               activeSubTab === 'matrimony'
-                ? 'bg-[#E2A336] text-[#03221F] shadow-md'
-                : 'bg-[#03221F]/70 text-emerald-300 hover:bg-emerald-900/40 border border-emerald-800/40'
+                ? 'bg-[#E2A336] text-[#03221F] ring-2 ring-[#E2A336]/60 shadow-lg scale-[1.01]'
+                : 'bg-[#03221F]/80 text-emerald-200 hover:bg-emerald-900/50 border border-emerald-800/50'
             }`}
           >
-            <HeartHandshake className="w-4 h-4 shrink-0" />
-            <span className="truncate">দ্বীনি পাত্র-পাত্রী ({matrimonials.length})</span>
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  activeSubTab === 'matrimony'
+                    ? 'bg-[#03221F] text-[#E2A336]'
+                    : 'bg-[#E2A336]/20 text-[#E2A336] group-hover:bg-[#E2A336]/30'
+                }`}
+              >
+                <HeartHandshake className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm sm:text-base font-bold flex items-center gap-2">
+                  <span>{t.subtabMatrimony}</span>
+                  {activeSubTab === 'matrimony' && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#03221F] text-[#E2A336] font-extrabold uppercase">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p
+                  className={`text-xs mt-0.5 leading-snug ${
+                    activeSubTab === 'matrimony' ? 'text-[#03221F]/80 font-medium' : 'text-emerald-300/70'
+                  }`}
+                >
+                  {t.subtabMatrimonyDesc}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span
+                className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                  activeSubTab === 'matrimony'
+                    ? 'bg-[#03221F] text-[#E2A336]'
+                    : 'bg-emerald-900/80 text-emerald-200 border border-emerald-700/60'
+                }`}
+              >
+                {matrimonials.length}
+              </span>
+              <ChevronRight
+                className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
+                  activeSubTab === 'matrimony' ? 'text-[#03221F]' : 'text-emerald-400'
+                }`}
+              />
+            </div>
           </button>
 
+          {/* Sub-Tab 2: Mosque Vacancies */}
           <button
+            id="subtab-mosques-btn"
             onClick={() => setActiveSubTab('mosques')}
-            className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`w-full p-3 sm:p-3.5 rounded-2xl font-bold transition-all flex items-center justify-between gap-3 text-left cursor-pointer group shadow-sm ${
               activeSubTab === 'mosques'
-                ? 'bg-[#E2A336] text-[#03221F] shadow-md'
-                : 'bg-[#03221F]/70 text-emerald-300 hover:bg-emerald-900/40 border border-emerald-800/40'
+                ? 'bg-[#E2A336] text-[#03221F] ring-2 ring-[#E2A336]/60 shadow-lg scale-[1.01]'
+                : 'bg-[#03221F]/80 text-emerald-200 hover:bg-emerald-900/50 border border-emerald-800/50'
             }`}
           >
-            <Building2 className="w-4 h-4 shrink-0" />
-            <span className="truncate">মসজিদ নিয়োগ ({vacancies.length})</span>
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  activeSubTab === 'mosques'
+                    ? 'bg-[#03221F] text-[#E2A336]'
+                    : 'bg-[#E2A336]/20 text-[#E2A336] group-hover:bg-[#E2A336]/30'
+                }`}
+              >
+                <Building2 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm sm:text-base font-bold flex items-center gap-2">
+                  <span>{t.subtabMosques}</span>
+                  {activeSubTab === 'mosques' && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#03221F] text-[#E2A336] font-extrabold uppercase">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p
+                  className={`text-xs mt-0.5 leading-snug ${
+                    activeSubTab === 'mosques' ? 'text-[#03221F]/80 font-medium' : 'text-emerald-300/70'
+                  }`}
+                >
+                  {t.subtabMosquesDesc}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span
+                className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                  activeSubTab === 'mosques'
+                    ? 'bg-[#03221F] text-[#E2A336]'
+                    : 'bg-emerald-900/80 text-emerald-200 border border-emerald-700/60'
+                }`}
+              >
+                {vacancies.length}
+              </span>
+              <ChevronRight
+                className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
+                  activeSubTab === 'mosques' ? 'text-[#03221F]' : 'text-emerald-400'
+                }`}
+              />
+            </div>
           </button>
 
+          {/* Sub-Tab 3: Imam Biodatas */}
           <button
+            id="subtab-imams-btn"
             onClick={() => setActiveSubTab('imams')}
-            className={`py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`w-full p-3 sm:p-3.5 rounded-2xl font-bold transition-all flex items-center justify-between gap-3 text-left cursor-pointer group shadow-sm ${
               activeSubTab === 'imams'
-                ? 'bg-[#E2A336] text-[#03221F] shadow-md'
-                : 'bg-[#03221F]/70 text-emerald-300 hover:bg-emerald-900/40 border border-emerald-800/40'
+                ? 'bg-[#E2A336] text-[#03221F] ring-2 ring-[#E2A336]/60 shadow-lg scale-[1.01]'
+                : 'bg-[#03221F]/80 text-emerald-200 hover:bg-emerald-900/50 border border-emerald-800/50'
             }`}
           >
-            <User className="w-4 h-4 shrink-0" />
-            <span className="truncate">ইমাম বায়োডাটা ({imams.length})</span>
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  activeSubTab === 'imams'
+                    ? 'bg-[#03221F] text-[#E2A336]'
+                    : 'bg-[#E2A336]/20 text-[#E2A336] group-hover:bg-[#E2A336]/30'
+                }`}
+              >
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm sm:text-base font-bold flex items-center gap-2">
+                  <span>{t.subtabImams}</span>
+                  {activeSubTab === 'imams' && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#03221F] text-[#E2A336] font-extrabold uppercase">
+                      Active
+                    </span>
+                  )}
+                </div>
+                <p
+                  className={`text-xs mt-0.5 leading-snug ${
+                    activeSubTab === 'imams' ? 'text-[#03221F]/80 font-medium' : 'text-emerald-300/70'
+                  }`}
+                >
+                  {t.subtabImamsDesc}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span
+                className={`text-xs px-2.5 py-1 rounded-full font-bold ${
+                  activeSubTab === 'imams'
+                    ? 'bg-[#03221F] text-[#E2A336]'
+                    : 'bg-emerald-900/80 text-emerald-200 border border-emerald-700/60'
+                }`}
+              >
+                {imams.length}
+              </span>
+              <ChevronRight
+                className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
+                  activeSubTab === 'imams' ? 'text-[#03221F]' : 'text-emerald-400'
+                }`}
+              />
+            </div>
           </button>
         </div>
       </div>
@@ -363,10 +573,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={
               activeSubTab === 'matrimony'
-                ? 'পাত্র/পাত্রীর নাম, পেশা, শিক্ষা, এলাকা দিয়ে খুঁজুন...'
+                ? t.searchMatrimonyPlaceholder
                 : activeSubTab === 'mosques'
-                ? 'মসজিদের নাম, এলাকা, পদবী দিয়ে খুঁজুন...'
-                : 'ইমামের নাম, শিক্ষাগত যোগ্যতা, এলাকা দিয়ে খুঁজুন...'
+                ? t.searchMosquesPlaceholder
+                : t.searchImamsPlaceholder
             }
             className="w-full bg-[#03221F] border border-emerald-800/80 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-emerald-400/50 focus:outline-hidden focus:border-[#E2A336]"
           />
@@ -385,7 +595,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                     : 'text-emerald-300 hover:text-white'
                 }`}
               >
-                সবাই
+                {t.filterAll}
               </button>
               <button
                 onClick={() => setMatrimonyTypeFilter('groom')}
@@ -395,7 +605,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                     : 'text-emerald-300 hover:text-white'
                 }`}
               >
-                <span>🤵 পাত্র</span>
+                <span>{t.filterGroom}</span>
               </button>
               <button
                 onClick={() => setMatrimonyTypeFilter('bride')}
@@ -405,7 +615,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                     : 'text-emerald-300 hover:text-white'
                 }`}
               >
-                <span>👰 পাত্রী</span>
+                <span>{t.filterBride}</span>
               </button>
             </div>
           )}
@@ -416,11 +626,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
             onChange={(e) => setDistrictFilter(e.target.value)}
             className="bg-[#03221F] border border-emerald-800/80 rounded-xl px-2.5 py-2 text-xs text-emerald-200 focus:outline-hidden focus:border-[#E2A336] cursor-pointer"
           >
-            <option value="all">সব এলাকা / জেলা</option>
-            <option value="কাছাড়">কাছাড় (Cachar)</option>
-            <option value="শিলচর">শিলচর (Silchar)</option>
-            <option value="করিমগঞ্জ">করিমগঞ্জ (Karimganj)</option>
-            <option value="হাইলাকান্দি">হাইলাকান্দি (Hailakandi)</option>
+            <option value="all">{t.filterAllDistricts}</option>
+            <option value="কাছাড়">{lang === 'en' ? 'Cachar' : lang === 'ur' ? 'کچهار (Cachar)' : 'কাছাড় (Cachar)'}</option>
+            <option value="শিলচর">{lang === 'en' ? 'Silchar' : lang === 'ur' ? 'سلچر (Silchar)' : 'শিলচর (Silchar)'}</option>
+            <option value="করিমগঞ্জ">{lang === 'en' ? 'Karimganj' : lang === 'ur' ? 'کریم گنج (Karimganj)' : 'করিমগঞ্জ (Karimganj)'}</option>
+            <option value="হাইলাকান্দি">{lang === 'en' ? 'Hailakandi' : lang === 'ur' ? 'ہائیلاکاندی (Hailakandi)' : 'হাইলাকান্দি (Hailakandi)'}</option>
           </select>
 
           {/* Sort By */}
@@ -430,9 +640,9 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
               onChange={(e) => setSortBy(e.target.value as any)}
               className="bg-[#03221F] border border-emerald-800/80 rounded-xl px-2.5 py-2 text-xs text-emerald-200 focus:outline-hidden focus:border-[#E2A336] cursor-pointer"
             >
-              <option value="newest">নতুনগুলো আগে</option>
-              <option value="salary_high">হাদিয়া (বেশি থেকে কম)</option>
-              <option value="salary_low">হাদিয়া (কম থেকে বেশি)</option>
+              <option value="newest">{t.sortNewest}</option>
+              <option value="salary_high">{t.sortSalaryHigh}</option>
+              <option value="salary_low">{t.sortSalaryLow}</option>
             </select>
           )}
         </div>
@@ -443,7 +653,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-emerald-300 font-semibold">
-              মোট {filteredMatrimonials.length} টি পাত্র ও পাত্রীর বায়োডাটা পাওয়া গেছে
+              {lang === 'en'
+                ? `Total ${filteredMatrimonials.length} matrimonial profiles found`
+                : lang === 'ur'
+                ? `کل ${filteredMatrimonials.length} رشتے دستیاب ہیں`
+                : `মোট ${filteredMatrimonials.length} টি পাত্র ও পাত্রীর বায়োডাটা পাওয়া গেছে`}
             </span>
 
             <button
@@ -451,15 +665,26 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
               className="text-xs text-[#E2A336] font-bold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>নিজের বা পরিবারের বায়োডাটা জমা দিন</span>
+              <span>
+                {lang === 'en'
+                  ? '+ Submit Biodata'
+                  : lang === 'ur'
+                  ? '+ بائیو ڈیٹا جمع کریں'
+                  : 'নিজের বা পরিবারের বায়োডাটা জমা দিন'}
+              </span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
             {filteredMatrimonials.map((mat) => {
+              const dMat = getMatrimonyDisplay(mat, lang);
               const cleanNumber = (mat.whatsappNumber || mat.guardianPhone).replace(/[^0-9]/g, '');
               const waText = encodeURIComponent(
-                `আসসালামু আলাইকুম। বরাক ইসলামিক অ্যাপে আপনাদের ${mat.type === 'groom' ? 'পাত্রের' : 'পাত্রীর'} (${mat.codeName}) বায়োডাটা দেখে যোগাযোগ করছি।`
+                lang === 'en'
+                  ? `Assalamu Alaikum. Contacting you regarding the matrimonial biodata (${dMat.codeName}) on Barak Islamic App.`
+                  : lang === 'ur'
+                  ? `السلام علیکم۔ بارک اسلامک ایپ پر بائیو ڈیٹا (${dMat.codeName}) کے سلسلے میں رابطہ کر رہے ہیں۔`
+                  : `আসসালামু আলাইকুম। বরাক ইসলামিক অ্যাপে আপনাদের ${mat.type === 'groom' ? 'পাত্রের' : 'পাত্রীর'} (${dMat.codeName}) বায়োডাটা দেখে যোগাযোগ করছি।`
               );
 
               return (
@@ -482,7 +707,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <h4 className="text-sm font-bold text-white group-hover:text-[#E2A336] transition-colors">
-                              {mat.codeName}
+                              {dMat.codeName}
                             </h4>
                             <span
                               className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${
@@ -491,12 +716,22 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                                   : 'bg-rose-900/60 text-rose-300 border border-rose-700/50'
                               }`}
                             >
-                              {mat.type === 'groom' ? '🤵 পাত্র' : '👰 পাত্রী'}
+                              {mat.type === 'groom'
+                                ? lang === 'en'
+                                  ? '🤵 Groom'
+                                  : lang === 'ur'
+                                  ? '🤵 دولہا'
+                                  : '🤵 পাত্র'
+                                : lang === 'en'
+                                ? '👰 Bride'
+                                : lang === 'ur'
+                                ? '👰 دلہن'
+                                : '👰 পাত্রী'}
                             </span>
                           </div>
                           <p className="text-[11px] text-emerald-300/80 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3 text-[#E2A336] shrink-0" />
-                            <span>{mat.area}, {mat.district}</span>
+                            <span>{dMat.area}, {dMat.district}</span>
                           </p>
                         </div>
                       </div>
@@ -505,7 +740,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         <button
                           onClick={(e) => handleDeleteMatrimony(mat.id, e)}
                           className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors"
-                          title="মুছে ফেলুন"
+                          title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -515,16 +750,20 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                     {/* Quick Specs Pill */}
                     <div className="grid grid-cols-3 gap-1.5 bg-[#03221F] p-2 rounded-xl text-center text-[11px]">
                       <div>
-                        <span className="text-emerald-400/70 block text-[10px]">বয়স</span>
-                        <span className="font-bold text-white">{mat.age} বছর</span>
+                        <span className="text-emerald-400/70 block text-[10px]">{t.age}</span>
+                        <span className="font-bold text-white">{mat.age} {t.years}</span>
                       </div>
                       <div>
-                        <span className="text-emerald-400/70 block text-[10px]">উচ্চতা</span>
+                        <span className="text-emerald-400/70 block text-[10px]">
+                          {lang === 'en' ? 'Height' : lang === 'ur' ? 'قد' : 'উচ্চতা'}
+                        </span>
                         <span className="font-bold text-white">{mat.height}</span>
                       </div>
                       <div>
-                        <span className="text-emerald-400/70 block text-[10px]">গায়ের রঙ</span>
-                        <span className="font-bold text-[#E2A336]">{mat.complexion}</span>
+                        <span className="text-emerald-400/70 block text-[10px]">
+                          {lang === 'en' ? 'Complexion' : lang === 'ur' ? 'رنگت' : 'গায়ের রঙ'}
+                        </span>
+                        <span className="font-bold text-[#E2A336]">{dMat.complexion}</span>
                       </div>
                     </div>
 
@@ -532,19 +771,19 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                     <div className="space-y-1 text-xs">
                       <div className="flex items-center gap-1.5 text-emerald-100">
                         <GraduationCap className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
-                        <span className="line-clamp-1">{mat.education}</span>
+                        <span className="line-clamp-1">{dMat.education}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-200">
                         <Briefcase className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
                         <span className="line-clamp-1">
-                          {mat.profession} {mat.monthlyIncome ? `• ${mat.monthlyIncome}` : ''}
+                          {dMat.profession} {dMat.monthlyIncome ? `• ${dMat.monthlyIncome}` : ''}
                         </span>
                       </div>
                     </div>
 
                     {/* Religious Practice Tags */}
                     <div className="flex flex-wrap gap-1 pt-1">
-                      {mat.religiousPractices.slice(0, 3).map((prac, i) => (
+                      {dMat.religiousPractices.slice(0, 3).map((prac, i) => (
                         <span
                           key={i}
                           className="text-[10px] px-2 py-0.5 rounded-md bg-[#03221F] text-emerald-200 border border-emerald-800/40"
@@ -552,9 +791,9 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                           ✓ {prac}
                         </span>
                       ))}
-                      {mat.religiousPractices.length > 3 && (
+                      {dMat.religiousPractices.length > 3 && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#03221F] text-emerald-400 font-semibold">
-                          +{mat.religiousPractices.length - 3}
+                          +{dMat.religiousPractices.length - 3}
                         </span>
                       )}
                     </div>
@@ -580,7 +819,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         className="px-2.5 py-1.5 rounded-xl bg-[#03221F] hover:bg-emerald-900/60 text-white border border-emerald-700 font-semibold flex items-center gap-1 transition-colors"
                       >
                         <Phone className="w-3.5 h-3.5 text-[#E2A336]" />
-                        <span>কল</span>
+                        <span>{t.callDirect}</span>
                       </a>
                     </div>
 
@@ -588,7 +827,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                       onClick={() => setSelectedMatrimonyDetail(mat)}
                       className="px-3 py-1.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 font-bold flex items-center gap-1 transition-colors cursor-pointer"
                     >
-                      <span>বিস্তারিত দেখুন</span>
+                      <span>{t.viewDetails}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -600,9 +839,13 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
           {filteredMatrimonials.length === 0 && (
             <div className="text-center py-12 bg-[#09332E]/40 border border-emerald-800/40 rounded-2xl p-6 space-y-3">
               <HeartHandshake className="w-12 h-12 text-emerald-500/60 mx-auto" />
-              <h4 className="text-base font-bold text-white">কোন পাত্র/পাত্রীর বায়োডাটা পাওয়া যায়নি</h4>
+              <h4 className="text-base font-bold text-white">{t.noDataFound}</h4>
               <p className="text-xs text-emerald-300/80 max-w-sm mx-auto">
-                আপনার নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো পাত্র বা পাত্রীর তথ্য এই মুহূর্তে নেই।
+                {lang === 'en'
+                  ? 'No matrimonial profiles match your selected filters at this time.'
+                  : lang === 'ur'
+                  ? 'منتخب کردہ فلٹر کے مطابق کوئی پروفائل موجود نہیں ہے۔'
+                  : 'আপনার নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো পাত্র বা পাত্রীর তথ্য এই মুহূর্তে নেই।'}
               </p>
               <button
                 onClick={() => {
@@ -612,7 +855,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                 }}
                 className="px-4 py-2 rounded-xl bg-[#E2A336] text-[#03221F] font-bold text-xs"
               >
-                ফিল্টার রিসেট করুন
+                {t.resetFilter}
               </button>
             </div>
           )}
@@ -624,7 +867,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-emerald-300 font-semibold">
-              মোট {filteredVacancies.length} টি মসজিদের নিয়োগ বিজ্ঞপ্তি পাওয়া গেছে
+              {lang === 'en'
+                ? `Total ${filteredVacancies.length} mosque vacancies found`
+                : lang === 'ur'
+                ? `کل ${filteredVacancies.length} مساجد کی آسامیاں دستیاب ہیں`
+                : `মোট ${filteredVacancies.length} টি মসজিদের নিয়োগ বিজ্ঞপ্তি পাওয়া গেছে`}
             </span>
 
             <button
@@ -632,15 +879,26 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
               className="text-xs text-[#E2A336] font-bold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>নতুন বিজ্ঞপ্তি পোস্ট করুন</span>
+              <span>
+                {lang === 'en'
+                  ? '+ Post Mosque Vacancy'
+                  : lang === 'ur'
+                  ? '+ نئی آسامی پوسٹ کریں'
+                  : 'নতুন বিজ্ঞপ্তি পোস্ট করুন'}
+              </span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
             {filteredVacancies.map((v) => {
+              const dMosque = getMosqueDisplay(v, lang);
               const cleanNumber = (v.whatsappNumber || v.contactPhone).replace(/[^0-9]/g, '');
               const waText = encodeURIComponent(
-                `আসসালামু আলাইকুম। বরাক ইসলামিক অ্যাপে আপনাদের "${v.mosqueName}"-এর "${v.position}" পদে নিয়োগ বিজ্ঞপ্তি দেখে যোগাযোগ করছি।`
+                lang === 'en'
+                  ? `Assalamu Alaikum. Contacting you regarding the vacancy of "${dMosque.position}" at "${dMosque.mosqueName}" posted on Barak Islamic App.`
+                  : lang === 'ur'
+                  ? `السلام علیکم۔ بارک اسلامک ایپ پر "${dMosque.mosqueName}" میں "${dMosque.position}" کی آسامی کے سلسلے میں رابطہ کر رہے ہیں۔`
+                  : `আসসালামু আলাইকুম। বরাক ইসলামিক অ্যাপে আপনাদের "${dMosque.mosqueName}"-এর "${dMosque.position}" পদে নিয়োগ বিজ্ঞপ্তি দেখে যোগাযোগ করছি।`
               );
 
               return (
@@ -657,11 +915,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         </div>
                         <div>
                           <h4 className="text-sm sm:text-base font-bold text-white group-hover:text-[#E2A336] transition-colors">
-                            {v.mosqueName}
+                            {dMosque.mosqueName}
                           </h4>
                           <p className="text-[11px] text-emerald-300/80 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3 text-[#E2A336] shrink-0" />
-                            <span>{v.area}, {v.district}</span>
+                            <span>{dMosque.area}, {dMosque.district}</span>
                           </p>
                         </div>
                       </div>
@@ -670,7 +928,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         <button
                           onClick={(e) => handleDeleteVacancy(v.id, e)}
                           className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors"
-                          title="মুছে ফেলুন"
+                          title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -679,13 +937,15 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
                     <div className="p-2.5 bg-[#03221F] rounded-xl border border-emerald-800/50 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] text-emerald-400 block">নিয়োগের পদ</span>
-                        <span className="text-xs font-bold text-white">{v.position}</span>
+                        <span className="text-[10px] text-emerald-400 block">
+                          {lang === 'en' ? 'Position' : lang === 'ur' ? 'عہدہ' : 'নিয়োগের পদ'}
+                        </span>
+                        <span className="text-xs font-bold text-white">{dMosque.position}</span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] text-emerald-400 block">মাসিক হাদিয়া</span>
+                        <span className="text-[10px] text-emerald-400 block">{t.salaryHonorarium}</span>
                         <span className="text-xs font-bold text-[#E2A336]">
-                          ₹{v.offeredSalary.toLocaleString('en-IN')} / মাস
+                          ₹{v.offeredSalary.toLocaleString('en-IN')} / {lang === 'en' ? 'month' : lang === 'ur' ? 'ماہ' : 'মাস'}
                         </span>
                       </div>
                     </div>
@@ -693,11 +953,14 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                     <div className="space-y-1 text-xs">
                       <div className="flex items-center gap-1.5 text-emerald-200">
                         <GraduationCap className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
-                        <span className="line-clamp-1">{v.requiredQualification}</span>
+                        <span className="line-clamp-1">{dMosque.requiredQualification}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-200">
                         <Briefcase className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
-                        <span>অভিজ্ঞতা: {v.experienceRequired}</span>
+                        <span>
+                          {lang === 'en' ? 'Experience: ' : lang === 'ur' ? 'تجربہ: ' : 'অভিজ্ঞতা: '}
+                          {dMosque.experienceRequired}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -721,7 +984,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         className="px-2.5 py-1.5 rounded-xl bg-[#03221F] hover:bg-emerald-900/60 text-white border border-emerald-700 font-semibold flex items-center gap-1 transition-colors"
                       >
                         <Phone className="w-3.5 h-3.5 text-[#E2A336]" />
-                        <span>কল</span>
+                        <span>{t.callDirect}</span>
                       </a>
                     </div>
 
@@ -729,7 +992,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                       onClick={() => setSelectedVacancyDetail(v)}
                       className="px-3 py-1.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 font-bold flex items-center gap-1 transition-colors cursor-pointer"
                     >
-                      <span>বিস্তারিত দেখুন</span>
+                      <span>{t.viewDetails}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -741,9 +1004,13 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
           {filteredVacancies.length === 0 && (
             <div className="text-center py-12 bg-[#09332E]/40 border border-emerald-800/40 rounded-2xl p-6 space-y-3">
               <Building2 className="w-12 h-12 text-emerald-500/60 mx-auto" />
-              <h4 className="text-base font-bold text-white">কোন নিয়োগ বিজ্ঞপ্তি পাওয়া যায়নি</h4>
+              <h4 className="text-base font-bold text-white">{t.noDataFound}</h4>
               <p className="text-xs text-emerald-300/80 max-w-sm mx-auto">
-                আপনার নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো মসজিদের নিয়োগ বিজ্ঞপ্তি এই মুহূর্তে নেই।
+                {lang === 'en'
+                  ? 'No mosque vacancies match your selected filters at this time.'
+                  : lang === 'ur'
+                  ? 'اس وقت آپ کے منتخب فلٹر کے مطابق کوئی آسامی دستیاب نہیں ہے۔'
+                  : 'আপনার নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো মসজিদের নিয়োগ বিজ্ঞপ্তি এই মুহূর্তে নেই।'}
               </p>
             </div>
           )}
@@ -755,7 +1022,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-emerald-300 font-semibold">
-              মোট {filteredImams.length} জন সম্মানিত ইমাম সাহেবের বায়োডাটা পাওয়া গেছে
+              {lang === 'en'
+                ? `Total ${filteredImams.length} Imam biodatas found`
+                : lang === 'ur'
+                ? `کل ${filteredImams.length} ائمہ کرام کے بائیو ڈیٹا موجود ہیں`
+                : `মোট ${filteredImams.length} জন সম্মানিত ইমাম সাহেবের বায়োডাটা পাওয়া গেছে`}
             </span>
 
             <button
@@ -763,15 +1034,26 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
               className="text-xs text-[#E2A336] font-bold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>ইমাম সাহেবদের বায়োডাটা যুক্ত করুন</span>
+              <span>
+                {lang === 'en'
+                  ? '+ Submit Imam Biodata'
+                  : lang === 'ur'
+                  ? '+ امام بائیو ڈیٹا جمع کریں'
+                  : 'ইমাম সাহেবদের বায়োডাটা যুক্ত করুন'}
+              </span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
             {filteredImams.map((im) => {
+              const dImam = getImamDisplay(im, lang);
               const cleanNumber = (im.whatsappNumber || im.contactPhone).replace(/[^0-9]/g, '');
               const waText = encodeURIComponent(
-                `আসসালামু আলাইকুম হযরত ${im.fullName}। বরাক ইসলামিক অ্যাপে আপনার বায়োডাটা দেখে মসজিদের খেদমতের ব্যাপারে যোগাযোগ করছি।`
+                lang === 'en'
+                  ? `Assalamu Alaikum Hazrat ${dImam.fullName}. Contacting you regarding your biodata posted on Barak Islamic App.`
+                  : lang === 'ur'
+                  ? `السلام علیکم حضرت ${dImam.fullName}۔ بارک اسلامک ایپ پر آپ کے بائیو ڈیٹا کے سلسلے میں رابطہ کر رہے ہیں۔`
+                  : `আসসালামু আলাইকুম হযরত ${dImam.fullName}। বরাক ইসলামিক অ্যাপে আপনার বায়োডাটা দেখে মসজিদের খেদমতের ব্যাপারে যোগাযোগ করছি।`
               );
 
               return (
@@ -789,15 +1071,18 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <h4 className="text-sm sm:text-base font-bold text-white group-hover:text-[#E2A336] transition-colors">
-                              {im.fullName}
+                              {dImam.fullName}
                             </h4>
                             <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-[#E2A336] text-[#03221F]">
-                              {im.title}
+                              {dImam.title}
                             </span>
                           </div>
                           <p className="text-[11px] text-emerald-300/80 flex items-center gap-1 mt-0.5">
                             <MapPin className="w-3 h-3 text-[#E2A336] shrink-0" />
-                            <span>বর্তমান: {im.currentLocation}</span>
+                            <span>
+                              {lang === 'en' ? 'Current: ' : lang === 'ur' ? 'موجودہ: ' : 'বর্তমান: '}
+                              {dImam.currentLocation}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -806,7 +1091,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         <button
                           onClick={(e) => handleDeleteImam(im.id, e)}
                           className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors"
-                          title="মুছে ফেলুন"
+                          title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -815,15 +1100,17 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
                     <div className="p-2.5 bg-[#03221F] rounded-xl border border-emerald-800/50 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] text-emerald-400 block">অভিজ্ঞতা ও বয়স</span>
+                        <span className="text-[10px] text-emerald-400 block">{t.experienceAge}</span>
                         <span className="text-xs font-bold text-white">
-                          {im.experienceYears} বছর • বয়স {im.age}
+                          {im.experienceYears} {t.years} • {t.age} {im.age}
                         </span>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] text-emerald-400 block">প্রত্যাশিত হাদিয়া</span>
+                        <span className="text-[10px] text-emerald-400 block">
+                          {lang === 'en' ? 'Expected Honorarium' : lang === 'ur' ? 'متوقع مشاہرہ' : 'প্রত্যাশিত হাদিয়া'}
+                        </span>
                         <span className="text-xs font-bold text-[#E2A336]">
-                          ₹{im.expectedSalary.toLocaleString('en-IN')} / মাস
+                          ₹{im.expectedSalary.toLocaleString('en-IN')} / {lang === 'en' ? 'month' : lang === 'ur' ? 'ماہ' : 'মাস'}
                         </span>
                       </div>
                     </div>
@@ -831,11 +1118,14 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                     <div className="space-y-1 text-xs">
                       <div className="flex items-center gap-1.5 text-emerald-200">
                         <GraduationCap className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
-                        <span className="line-clamp-1">{im.qualification}</span>
+                        <span className="line-clamp-1">{dImam.qualification}</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-200">
                         <MapPin className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
-                        <span className="line-clamp-1">পছন্দের এলাকা: {im.preferredLocation}</span>
+                        <span className="line-clamp-1">
+                          {lang === 'en' ? 'Preferred Area: ' : lang === 'ur' ? 'پسندیدہ علاقہ: ' : 'পছন্দের এলাকা: '}
+                          {dImam.preferredLocation}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -859,7 +1149,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         className="px-2.5 py-1.5 rounded-xl bg-[#03221F] hover:bg-emerald-900/60 text-white border border-emerald-700 font-semibold flex items-center gap-1 transition-colors"
                       >
                         <Phone className="w-3.5 h-3.5 text-[#E2A336]" />
-                        <span>কল</span>
+                        <span>{t.callDirect}</span>
                       </a>
                     </div>
 
@@ -867,7 +1157,7 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                       onClick={() => setSelectedImamDetail(im)}
                       className="px-3 py-1.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-emerald-100 font-bold flex items-center gap-1 transition-colors cursor-pointer"
                     >
-                      <span>বায়োডাটা দেখুন</span>
+                      <span>{t.viewDetails}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -879,9 +1169,13 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
           {filteredImams.length === 0 && (
             <div className="text-center py-12 bg-[#09332E]/40 border border-emerald-800/40 rounded-2xl p-6 space-y-3">
               <User className="w-12 h-12 text-emerald-500/60 mx-auto" />
-              <h4 className="text-base font-bold text-white">কোন ইমাম সাহেবের বায়োডাটা পাওয়া যায়নি</h4>
+              <h4 className="text-base font-bold text-white">{t.noDataFound}</h4>
               <p className="text-xs text-emerald-300/80 max-w-sm mx-auto">
-                আপনার নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো বায়োডাটা এই মুহূর্তে নেই।
+                {lang === 'en'
+                  ? 'No Imam biodatas match your selected filters at this time.'
+                  : lang === 'ur'
+                  ? 'اس وقت آپ کے منتخب فلٹر کے مطابق کوئی بائیو ڈیٹا دستیاب نہیں ہے۔'
+                  : 'আপনার নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো ইমাম সাহেবের তথ্য এই মুহূর্তে নেই।'}
               </p>
             </div>
           )}

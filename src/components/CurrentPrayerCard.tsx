@@ -1,7 +1,8 @@
 import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Moon, Sun, Sparkles, MapPin, CheckCircle2 } from 'lucide-react';
-import { PrayerDisplayInfo, LocationMeta } from '../types';
+import { PrayerDisplayInfo, LocationMeta, AppLanguage } from '../types';
 import { calculateHijriFromDate } from '../utils/hijriCalendar';
+import { TRANSLATIONS } from '../utils/translations';
 
 interface CurrentPrayerCardProps {
   selectedLocation: LocationMeta;
@@ -19,6 +20,7 @@ interface CurrentPrayerCardProps {
   mosqueName?: string;
   hijriAdjustment?: number;
   onOpenArabicCalendar?: () => void;
+  lang?: AppLanguage;
 }
 
 export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
@@ -37,7 +39,9 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
   mosqueName,
   hijriAdjustment = 0,
   onOpenArabicCalendar,
+  lang = 'en',
 }) => {
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const hijriDate = calculateHijriFromDate(selectedDate, hijriAdjustment);
   const sehriEnd = prayers.find((p) => p.key === 'sehri_end');
   const maghrib = prayers.find((p) => p.key === 'maghrib');
@@ -56,7 +60,7 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
   const nextMins = minutesToNext % 60;
 
   // Date formatting
-  const formattedDate = selectedDate.toLocaleDateString('en-US', {
+  const formattedDate = selectedDate.toLocaleDateString(lang === 'bn' ? 'bn-BD' : lang === 'ur' ? 'ur-PK' : 'en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -72,8 +76,8 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
 
   const offsetLabel =
     selectedLocation.offset === 0
-      ? 'Silchar Baseline (0 min)'
-      : `${selectedLocation.offset > 0 ? `+${selectedLocation.offset}` : selectedLocation.offset} min offset from Silchar`;
+      ? (lang === 'bn' ? 'শিলচর মূল সময় (০ মিনিট)' : lang === 'ur' ? 'سلچر بنیادی وقت' : 'Silchar Baseline (0 min)')
+      : `${selectedLocation.offset > 0 ? `+${selectedLocation.offset}` : selectedLocation.offset} ${lang === 'bn' ? 'মিনিট শিলচর থেকে পার্থক্য' : lang === 'ur' ? 'منٹ کا فرق' : 'min offset from Silchar'}`;
 
   return (
     <div
@@ -96,7 +100,7 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
             </span>
             {/* Silchar-এর জায়গায় ডায়নামিক লোকেশন নাম */}
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              📍 {userCity ? userCity : 'Silchar'}
+              📍 {userCity ? userCity : selectedLocation.name}
               {selectedLocation.name && selectedLocation.name !== 'Silchar' && (
                 <span className="text-sm font-normal text-emerald-300">({selectedLocation.name})</span>
               )}
@@ -111,7 +115,7 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
 
           <p className="text-xs text-emerald-300/80 mt-1">
             {selectedLocation.district ? `${selectedLocation.district} District, ` : ''}
-            {selectedLocation.state} • {selectedLocation.description || 'Barak Valley Region'}
+            {selectedLocation.state} • {selectedLocation.description || (lang === 'bn' ? 'বরাক উপত্যকা' : 'Barak Valley Region')}
           </p>
         </div>
 
@@ -158,18 +162,19 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
           <button
             onClick={onOpenArabicCalendar}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/60 text-xs text-amber-300 font-medium transition-colors cursor-pointer group shadow-xs"
-            title="আরবী ক্যালেন্ডার দেখুন"
+            title={lang === 'en' ? 'Open Hijri Calendar' : lang === 'ur' ? 'ہجری کیلنڈر کھولیں' : 'আরবী ক্যালেন্ডার দেখুন'}
           >
             <Moon className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform shrink-0" />
-            <span className="font-semibold">{hijriDate.formattedBn}</span>
-            <span className="text-[11px] text-emerald-200/90 font-mono hidden sm:inline">
-              ({hijriDate.formattedEn})
+            <span className="font-semibold">
+              {lang === 'en' ? hijriDate.formattedEn : lang === 'ur' ? (hijriDate.formattedUr || hijriDate.formattedAr) : hijriDate.formattedBn}
             </span>
+            {lang !== 'en' && (
+              <span className="text-[11px] text-emerald-200/90 font-mono hidden sm:inline">
+                ({hijriDate.formattedEn})
+              </span>
+            )}
             <span className="text-[10px] text-emerald-300 font-mono bg-emerald-900/60 px-1.5 py-0.5 rounded border border-emerald-700/40">
               {todayFormattedDate}
-            </span>
-            <span className="text-[11px] text-emerald-300 font-serif opacity-90 hidden lg:inline" dir="rtl">
-              ({hijriDate.formattedAr})
             </span>
             {hijriDate.specialEvent && (
               <span className="text-[10px] bg-rose-600/90 text-white px-1.5 py-0.2 rounded font-bold ml-1">
@@ -187,7 +192,7 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold uppercase tracking-wider flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
-              Upcoming Next
+              {t.upcomingNext}
             </span>
             {hasUserOverride && (
               <span className="px-2 py-0.5 rounded-full bg-emerald-800/80 text-emerald-200 text-[11px] font-medium flex items-center gap-1 border border-emerald-700">
@@ -212,12 +217,18 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
                 {nextPrayer.adjustedTime}
               </span>
               <span className="text-xs text-emerald-300">
-                (Silchar base: {nextPrayer.baseTime})
+                ({t.silcharBase}: {nextPrayer.baseTime})
               </span>
             </div>
 
             <div className="px-3 py-1 rounded-lg bg-emerald-950 border border-emerald-800 text-xs font-mono text-emerald-200">
-              In <span className="font-bold text-amber-300">{nextHours}h {nextMins}m</span>
+              {lang === 'bn' ? (
+                <>আর <span className="font-bold text-amber-300">{nextHours} ঘণ্টা {nextMins} মিনিট</span></>
+              ) : lang === 'ur' ? (
+                <><span className="font-bold text-amber-300">{nextHours} گھنٹے {nextMins} منٹ</span> میں</>
+              ) : (
+                <>In <span className="font-bold text-amber-300">{nextHours}h {nextMins}m</span></>
+              )}
             </div>
           </div>
 
@@ -233,7 +244,7 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
             <div className="flex items-center justify-between text-xs text-emerald-300">
               <span className="flex items-center gap-1">
                 <Moon className="w-3.5 h-3.5 text-amber-300" />
-                Sehri Ends
+                {t.sehri_end || 'Sehri Ends'}
               </span>
               <span className="text-[10px] text-amber-300 font-mono">Suhoor</span>
             </div>
@@ -241,7 +252,7 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
               {sehriEnd ? sehriEnd.adjustedTime : '--:--'}
             </span>
             <span className="text-[10px] text-emerald-400/80">
-              Fast starts / Fajr begins
+              {lang === 'bn' ? 'রোজা শুরু / ফজরের ওয়াক্ত' : lang === 'ur' ? 'روزہ شروع / فجر کا وقت' : 'Fast starts / Fajr begins'}
             </span>
           </div>
 
@@ -250,7 +261,7 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
             <div className="flex items-center justify-between text-xs text-amber-300">
               <span className="flex items-center gap-1">
                 <Sun className="w-3.5 h-3.5 text-amber-400" />
-                Iftar Time
+                {lang === 'bn' ? 'ইফতার সময়' : lang === 'ur' ? 'افطار کا وقت' : 'Iftar Time'}
               </span>
               <span className="text-[10px] text-amber-400 font-mono">Maghrib</span>
             </div>
@@ -258,13 +269,13 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
               {maghrib ? maghrib.adjustedTime : '--:--'}
             </span>
             <span className="text-[10px] text-amber-300/80">
-              Break fast / Sunset
+              {lang === 'bn' ? 'ইফতার / সূর্যাস্ত' : lang === 'ur' ? 'افطار / غروب آفتاب' : 'Break fast / Sunset'}
             </span>
           </div>
 
           {/* Fasting Duration badge */}
           <div className="col-span-2 pt-1 flex items-center justify-between text-xs text-emerald-300/80 border-t border-emerald-800/40 mt-1">
-            <span>Daily Fasting Duration:</span>
+            <span>{lang === 'bn' ? 'দৈনিক রোজার সময়সীমা:' : lang === 'ur' ? 'روزے کا دورانیہ:' : 'Daily Fasting Duration:'}</span>
             <span className="font-mono font-bold text-white">{fastingDurationStr}</span>
           </div>
         </div>
@@ -272,3 +283,4 @@ export const CurrentPrayerCard: React.FC<CurrentPrayerCardProps> = ({
     </div>
   );
 };
+
