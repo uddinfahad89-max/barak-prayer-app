@@ -179,28 +179,21 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
     showToast('মাশাআল্লাহ! পাত্র/পাত্রীর বায়োডাটা সফলভাবে সংরক্ষিত হয়েছে। (+২০ কয়েন)');
   };
 
-  const handleDeleteImam = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('আপনি কি এই বায়োডাটা মুছে ফেলতে চান?')) {
-      setImams((prev) => prev.filter((item) => item.id !== id));
-      showToast('বায়োডাটা মুছে ফেলা হয়েছে।');
-    }
-  };
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'imam' | 'vacancy' | 'matrimony'; id: string; title: string } | null>(null);
 
-  const handleDeleteVacancy = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('আপনি কি এই নিয়োগ বিজ্ঞপ্তি মুছে ফেলতে চান?')) {
-      setVacancies((prev) => prev.filter((item) => item.id !== id));
-      showToast('বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে।');
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'imam') {
+      setImams((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      showToast(lang === 'en' ? 'Biodata deleted.' : 'বায়োডাটা মুছে ফেলা হয়েছে।');
+    } else if (deleteTarget.type === 'vacancy') {
+      setVacancies((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      showToast(lang === 'en' ? 'Vacancy post deleted.' : 'বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে।');
+    } else {
+      setMatrimonials((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      showToast(lang === 'en' ? 'Biodata deleted.' : 'পাত্র/পাত্রীর বায়োডাটা মুছে ফেলা হয়েছে।');
     }
-  };
-
-  const handleDeleteMatrimony = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('আপনি কি এই বায়োডাটা মুছে ফেলতে চান?')) {
-      setMatrimonials((prev) => prev.filter((item) => item.id !== id));
-      showToast('পাত্র/পাত্রীর বায়োডাটা মুছে ফেলা হয়েছে।');
-    }
+    setDeleteTarget(null);
   };
 
   // Multilingual District Matcher
@@ -738,8 +731,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
                       {mat.isCustomSubmission && (
                         <button
-                          onClick={(e) => handleDeleteMatrimony(mat.id, e)}
-                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget({ type: 'matrimony', id: mat.id, title: dMat.fullName });
+                          }}
+                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -926,8 +922,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
                       {v.isCustomSubmission && (
                         <button
-                          onClick={(e) => handleDeleteVacancy(v.id, e)}
-                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget({ type: 'vacancy', id: v.id, title: dMosque.mosqueName });
+                          }}
+                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1089,8 +1088,11 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
                       {im.isCustomSubmission && (
                         <button
-                          onClick={(e) => handleDeleteImam(im.id, e)}
-                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget({ type: 'imam', id: im.id, title: dImam.fullName });
+                          }}
+                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1183,6 +1185,39 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
       )}
 
       {/* Sub-Modals */}
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-[#03221F] border border-rose-600/70 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-3 text-xs">
+            <h3 className="font-bold text-white text-sm flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-400" />
+              <span>{lang === 'en' ? 'Confirm Deletion' : 'মুছে ফেলার নিশ্চিতকরণ'}</span>
+            </h3>
+            <p className="text-rose-200/90">
+              {lang === 'en'
+                ? `Are you sure you want to delete "${deleteTarget.title}"?`
+                : `আপনি কি নিশ্চিত যে "${deleteTarget.title}" মুছে ফেলতে চান?`}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="px-3 py-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 font-medium cursor-pointer"
+              >
+                {lang === 'en' ? 'Cancel' : 'বাতিল'}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer"
+              >
+                {lang === 'en' ? 'Yes, Delete' : 'মুছে ফেলুন'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <ImamBiodataFormModal
         isOpen={isImamFormOpen}
         onClose={() => setIsImamFormOpen(false)}

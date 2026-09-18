@@ -116,20 +116,18 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
     showToast('আলহামদুলিল্লাহ! মসজিদের নিয়োগ বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে। (+২০ কয়েন)');
   };
 
-  const handleDeleteImam = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('আপনি কি এই বায়োডাটা মুছে ফেলতে চান?')) {
-      setImams((prev) => prev.filter((item) => item.id !== id));
-      showToast('বায়োডাটা মুছে ফেলা হয়েছে।');
-    }
-  };
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'imam' | 'vacancy'; id: string; title: string } | null>(null);
 
-  const handleDeleteVacancy = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm('আপনি কি এই নিয়োগ বিজ্ঞপ্তি মুছে ফেলতে চান?')) {
-      setVacancies((prev) => prev.filter((item) => item.id !== id));
-      showToast('বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে।');
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'imam') {
+      setImams((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      showToast(lang === 'en' ? 'Biodata deleted successfully.' : 'বায়োডাটা মুছে ফেলা হয়েছে।');
+    } else {
+      setVacancies((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      showToast(lang === 'en' ? 'Vacancy post deleted successfully.' : 'বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে।');
     }
+    setDeleteTarget(null);
   };
 
   // Filtered Mosque Vacancies
@@ -391,9 +389,12 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
 
                         {vac.isCustomSubmission && (
                           <button
-                            onClick={(e) => handleDeleteVacancy(vac.id, e)}
-                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors"
-                            title="বিজ্ঞপ্তি মুছুন"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget({ type: 'vacancy', id: vac.id, title: vac.mosqueName });
+                            }}
+                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
+                            title={lang === 'en' ? 'Delete post' : 'বিজ্ঞপ্তি মুছুন'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -543,9 +544,12 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
 
                         {im.isCustomSubmission && (
                           <button
-                            onClick={(e) => handleDeleteImam(im.id, e)}
-                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors"
-                            title="বায়োডাটা মুছুন"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTarget({ type: 'imam', id: im.id, title: im.fullName });
+                            }}
+                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
+                            title={lang === 'en' ? 'Delete biodata' : 'বায়োডাটা মুছুন'}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -661,10 +665,43 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
             onClick={onClose}
             className="px-4 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white font-semibold transition-colors ml-auto cursor-pointer"
           >
-            বন্ধ করুন
+            {lang === 'en' ? 'Close' : lang === 'ur' ? 'بند کریں' : 'বন্ধ করুন'}
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-[#03221F] border border-rose-600/70 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-3 text-xs">
+            <h3 className="font-bold text-white text-sm flex items-center gap-2">
+              <Trash2 className="w-4 h-4 text-rose-400" />
+              <span>{lang === 'en' ? 'Confirm Deletion' : 'মুছে ফেলার নিশ্চিতকরণ'}</span>
+            </h3>
+            <p className="text-rose-200/90">
+              {lang === 'en'
+                ? `Are you sure you want to delete "${deleteTarget.title}"?`
+                : `আপনি কি নিশ্চিত যে "${deleteTarget.title}" মুছে ফেলতে চান?`}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="px-3 py-1.5 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 font-medium cursor-pointer"
+              >
+                {lang === 'en' ? 'Cancel' : 'বাতিল'}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold cursor-pointer"
+              >
+                {lang === 'en' ? 'Yes, Delete' : 'মুছে ফেলুন'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sub-Modals: Form for Imam, Form for Mosque, Detail for Imam, Detail for Mosque */}
       <ImamBiodataFormModal

@@ -1,4 +1,4 @@
-import { MatrimonyBiodata, ImamBiodata, MosqueVacancy, AppLanguage } from '../types';
+import { MatrimonyBiodata, ImamBiodata, MosqueVacancy, UmrahPackage, AppLanguage } from '../types';
 
 // Translation dictionary for common Bengali phrases to English & Urdu
 const TRANSLATION_MAP_EN: Record<string, string> = {
@@ -198,6 +198,89 @@ const TRANSLATION_MAP_EN: Record<string, string> = {
   'আলহাজ্ব মাওলানা নজরুল ইসলাম (সভাপতি)': 'Alhaj Mawlana Nazrul Islam (President)',
   'মুহাম্মাদ জসিম উদ্দিন (সেক্রেটারি)': 'Muhammad Jasim Uddin (Secretary)',
   'হাজী রফিক আহমেদ লস্কর (মুতাওয়াল্লী)': 'Haji Rafiq Ahmed Laskar (Mutawalli)',
+
+  // Umrah Packages & Travel Agencies
+  'আল-হারামাইন ট্যুরস অ্যান্ড ট্রাভেলস (Al-Haramain Tours)': 'Al-Haramain Tours & Travels',
+  'বরাক ভ্যালি হজ ও উমরাহ সার্ভিস (Barak Umrah Services)': 'Barak Valley Hajj & Umrah Services',
+  'জমজম ইন্টারন্যাশনাল ট্রাভেলস (Zamzam Travels)': 'Zamzam International Travels',
+  'বেঙ্গল ও নর্থ-ইস্ট কাফেলা ট্রাভেলস (Bengal Umrah Group)': 'Bengal & North-East Kafla Travels (Bengal Umrah Group)',
+  'সোনাই রোড, শিলচর, আসাম (Silchar)': 'Sonai Road, Silchar, Assam',
+  'স্টেশন রোড, করিমগঞ্জ, আসাম (Karimganj)': 'Station Road, Karimganj, Assam',
+  'পল্টন বাজার, গুয়াহাটি (Guwahati) ও বদরপুর': 'Paltan Bazar, Guwahati & Badarpur',
+  'পার্ক সার্কাস, কলকাতা (Kolkata) ও শিলচর যোগাযোগ কেন্দ্র': 'Park Circus, Kolkata & Silchar Contact Center',
+  '১৫ দিনের বরকতময় রমজান উমরাহ কাফেলা ২০২৬': '15-Day Blessed Ramadan Umrah Caravan 2026',
+  '২১ দিনের সুপার ডিলাক্স উমরাহ স্পেশাল প্যাকেজ': '21-Day Super Deluxe Umrah Special Package',
+  '১৪ দিনের ইকোনমি সাশ্রয়ী উমরাহ কাফেলা': '14-Day Economy Budget Umrah Caravan',
+  '১২ দিনের ভিআইপি ৫-স্টার উমরাহ এক্সক্লুসিভ': '12-Day VIP 5-Star Exclusive Umrah',
+  'শিলচর (Silchar) / গুয়াহাটি': 'Silchar / Guwahati',
+  'শিলচর / কলকাতা (Kolkata)': 'Silchar / Kolkata',
+  'গুয়াহাটি (GAU) / শিলচর': 'Guwahati (GAU) / Silchar',
+  'কলকাতা (CCU) / দিল্লি (DEL)': 'Kolkata (CCU) / Delhi (DEL)',
+  'রমজান ২০২৬ (পবিত্র লাইলাতুল কদর ও শেষ দশক)': 'Ramadan 2026 (Laylatul Qadr & Last 10 Days)',
+  'প্রতি মাসের ১৫ ও ২৮ তারিখ': '15th & 28th of every month',
+  'আসন্ন শবে বরাত ও রজব কাফেলা': 'Upcoming Shab-e-Barat & Rajab Caravan',
+  'প্রতি সপ্তাহে নিয়মিত ফ্লাইট': 'Regular Weekly Departures',
+  'প্রতি সপ্তাহে নিয়মিত ফ্লাইট': 'Regular Weekly Departures',
+  'হোটেল আনোয়ার আল দিয়াহ (৩ তারকা)': 'Hotel Anwar Al Diya (3-Star)',
+  'হোটেল আনোয়ার আল দিয়াহ': 'Hotel Anwar Al Diya',
+  'হোটেল দার আল তাকাওয়া (৩ তারকা)': 'Hotel Dar Al Taqwa (3-Star)',
+  'হোটেল দার আল তাকাওয়া': 'Hotel Dar Al Taqwa',
+  'হোটেল ফাহাদ গ্র্যান্ড (৪ তারকা)': 'Hotel Fahad Grand (4-Star)',
+  'হোটেল ফাহাদ গ্র্যান্ড': 'Hotel Fahad Grand',
+  'হোটেল রওজা ভিউ ইন্টারন্যাশনাল (৪ তারকা)': 'Hotel Rawdah View International (4-Star)',
+  'হোটেল রওজা ভিউ ইন্টারন্যাশনাল': 'Hotel Rawdah View International',
+  'হোটেল বরকত আল মাক্কি (ইকোনমি)': 'Hotel Barakat Al Makki (Economy)',
+  'হোটেল বরকত আল মাক্ক (হকোনাম)': 'Hotel Barakat Al Makki (Economy)',
+  'হোটেল মানারাত মদিনা': 'Hotel Manarat Madinah',
+  'সুইসোটেল আল মাকাম / ক্লক টাওয়ার (৫ তারকা)': 'Swissôtel Al Maqam / Clock Tower (5-Star)',
+  'সুইসোতেল আল মাকাম / ক্লক টাওয়ার (৫ তারকা)': 'Swissôtel Al Maqam / Clock Tower (5-Star)',
+  'আনওয়ার আল মদিনা মোভেনপিক (৫ তারকা)': 'Anwar Al Madinah Mövenpick (5-Star)',
+  'আনোয়ার আল মদিনা মোভেনপিক (৫ তারকা)': 'Anwar Al Madinah Mövenpick (5-Star)',
+  'সৌদি উমরাহ ভিসা ও ইন্সুরেন্স': 'Saudi Umrah Visa & Health Insurance',
+  'রিটার্ন এয়ার টিকিট (শিলচর/গুয়াহাটি-জেদ্দা)': 'Return Air Ticket (Silchar/Guwahati - Jeddah)',
+  'মক্কা ও মদিনায় ৩-স্টার হোটেল': '3-Star Hotel in Makkah & Madinah',
+  '৩ বেলা সুস্বাদু দেশি বুফে খাবার': '3 Times Daily Indian Buffet Meals',
+  'মক্কা ও মদিনার ঐতিহাসিক স্থান জিয়ারত': 'Historic Ziyarat in Makkah & Madinah',
+  'শীতাতপ নিয়ন্ত্রিত ভিআইপি বাসে যাতায়াত': 'Air-Conditioned VIP Bus Transport',
+  'অভিজ্ঞ আলেম ও মুয়াল্লিম গাইড': 'Experienced Islamic Scholar & Guide',
+  '৫ লিটার পবিত্র জমজম পানি উপহার': '5 Litres Holy Zamzam Water Gift',
+  'উমরাহ কিট, ইহরাম ও ট্রাভেল ব্যাগ': 'Umrah Kit, Ihram & Travel Bag',
+  'সৌদি আরব বায়োমেট্রিক ও ভিসা প্রসেসিং': 'Saudi Biometrics & Visa Processing',
+  'আন্তর্জাতিক এয়ারলাইন্স টিকিট': 'International Airlines Flight Ticket',
+  'হারাম শরীফের খুব কাছে ৪-স্টার হোটেল': '4-Star Hotel very close to Haram',
+  '৩ বেলা দেশি ভাত, মাছ-মাংস ও নাস্তা': '3 Times Daily Indian Meals & Breakfast',
+  'ঐতিহাসিক বদর প্রান্তর, উহুদ ও জাবালে নূর জিয়ারত': 'Ziyarat of historic Badr, Uhud & Jabal al-Noor',
+  'মুয়াল্লিমের নেতৃত্বে তাওয়াফ ও সাঈ': 'Tawaf & Saee guided by experienced Muallim',
+  '৫ লিটার খাঁটি জমজম পানি': '5 Litres Pure Zamzam Water',
+  'লাগেজ ট্রলি ব্যাগ ও পাসপোর্ট পাউচ': 'Luggage Trolley Bag & Passport Pouch',
+  'মক্কা-মদিনা রুটে হারামাইন হাই-স্পিড ট্রেন সুবিধা': 'Haramain High-Speed Bullet Train Experience',
+  'উমরাহ ভিসা ও হেলথ ইন্সুরেন্স': 'Umrah Visa & Health Insurance',
+  'উমরাহ ভিসা ও হেলথ ইন্স্যুরেন্স': 'Umrah Visa & Health Insurance',
+  'রিটার্ন ফ্লাইটের টিকিট': 'Return Flight Air Tickets',
+  'মক্কা ও মদিনা হোটেল শেয়ারিং': 'Sharing Hotel in Makkah & Madinah',
+  'মক্কা ও মদিনা হোটেল শেয়ারিং': 'Sharing Hotel in Makkah & Madinah',
+  '৩ বেলা বাংলা খাবার সরবরাহ': '3 Times Daily Meals',
+  'মক্কার আরাফাত, মিনা, মুজদালিফা জিয়ারত': 'Ziyarat to Arafat, Mina & Muzdalifah',
+  'মদিনার মসজিদে কুবা ও কেবলাতাইন জিয়ারত': 'Ziyarat to Masjid Quba & Qiblatain in Madinah',
+  '২৪ ঘণ্টা বাস শাটল সার্ভিস ও গাইড': '24-Hour Shuttle Service & Guide',
+  '৫ লিটার জমজম পানি গ্যারান্টিড': '5 Litres Zamzam Water Guaranteed',
+  'মাল্টিপল এন্ট্রি ১ বছরের ট্যুরিস্ট/উমরাহ ভিসা': 'Multiple Entry 1-Year Tourist/Umrah Visa',
+  'এমিরেটস বা সাউদিয়া এয়ারলাইন্স বিজনেস/ইকোনমি টিকিট': 'Emirates or Saudia Airlines Business/Economy Tickets',
+  'এমিরেটস বা সাউদিয়া এয়ারলাইন্স বিজনেস/ইকোনমি টিকিট': 'Emirates or Saudia Airlines Business/Economy Tickets',
+  'ক্লক টাওয়ার ও হারামের আঙিনায় ৫-স্টার লাক্সারি হোটেল': '5-Star Luxury Hotel at Clock Tower / Courtyard of Haram',
+  'ক্লক টাওয়ার ও হারামের আঙিনায় ৫-স্টার লাক্সারি হোটেল': '5-Star Luxury Hotel at Clock Tower / Courtyard of Haram',
+  '৫ তারকা হোটেল ইন্টারন্যাশনাল বুফে ব্রেকফাস্ট ও ডিনার': '5-Star Hotel International Buffet Breakfast & Dinner',
+  'প্রাইভেট জিএমসি / লাক্সারি কারে বিমানবন্দর পিকআপ ও জিয়ারত': 'Private GMC / Luxury Car Airport Transfers & Ziyarat',
+  'ভিআইপি হারামাইন বুলেট ট্রেন ফার্স্ট ক্লাস টিকিট': 'VIP Haramain High-Speed Train First Class Tickets',
+  'বিশেষ মোয়াল্লিম ও সার্বক্ষণিক বাংলা/উর্দু দোভাষী': 'Personal Scholar Guide & Dedicated Interpreter',
+  '৫ লিটার জমজম পানি ও এক্সক্লুসিভ উপহার সামগ্রী': '5 Litres Zamzam Water & Exclusive Gift Hamper',
+  'উমরাহ ভিসা': 'Umrah Visa',
+  'হোটেল': 'Hotel',
+  'জিয়ারত': 'Ziyarat',
+  'গুয়াহাটি': 'Guwahati',
+  'কলকাতা': 'Kolkata',
+  'দিল্লি': 'Delhi',
+  'শীঘ্রই': 'Coming Soon',
 };
 
 const TRANSLATION_MAP_UR: Record<string, string> = {
@@ -364,6 +447,89 @@ const TRANSLATION_MAP_UR: Record<string, string> = {
   'আলহাজ্ব মাওলানা নজরুল ইসলাম (সভাপতি)': 'الحاج مولانا نذر الاسلام (صدر)',
   'মুহাম্মাদ জসিম উদ্দিন (সেক্রেটারি)': 'محمد جاسم الدین (سیکریٹری)',
   'হাজী রফিক আহমেদ লস্কর (মুতাওয়াল্লী)': 'حاجی رفیق احمد لشکر (متولی)',
+
+  // Umrah Packages & Travel Agencies
+  'আল-হারামাইন ট্যুরস অ্যান্ড ট্রাভেলস (Al-Haramain Tours)': 'الحرمین ٹورز اینڈ ٹریولز',
+  'বরাক ভ্যালি হজ ও উমরাহ সার্ভিস (Barak Umrah Services)': 'بارک ویلی حج و عمرہ سروسز',
+  'জমজম ইন্টারন্যাশনাল ট্রাভেলস (Zamzam Travels)': 'زم زم انٹرنیشنل ٹریولز',
+  'বেঙ্গল ও নর্থ-ইস্ট কাফেলা ট্রাভেলস (Bengal Umrah Group)': 'بنگال و نارتھ ایسٹ قافلہ ٹریولز',
+  'সোনাই রোড, শিলচর, আসাম (Silchar)': 'سونائی روڈ، سلچر، آسام',
+  'স্টেশন রোড, করিমগঞ্জ, আসাম (Karimganj)': 'اسٹیشن روڈ، کریم گنج، آسام',
+  'পল্টন বাজার, গুয়াহাটি (Guwahati) ও বদরপুর': 'پلٹن بازار، گوہاٹی اور بد رپور',
+  'পার্ক সার্কাস, কলকাতা (Kolkata) ও শিলচর যোগাযোগ কেন্দ্র': 'پارک سرکس، کولکتہ اور سلچر رابطہ مرکز',
+  '১৫ দিনের বরকতময় রমজান উমরাহ কাফেলা ২০২৬': '۱۵ روزہ مبارک رمضان عمرہ قافلہ ۲۰۲۶',
+  '২১ দিনের সুপার ডিলাক্স উমরাহ স্পেশাল প্যাকেজ': '۲۱ روزہ سپر ڈیلکس عمرہ اسپیشل پیکیج',
+  '১৪ দিনের ইকোনমি সাশ্রয়ী উমরাহ কাফেলা': '۱۴ روزہ معاشی کم خرچ عمرہ قافلہ',
+  '১২ দিনের ভিআইপি ৫-স্টার উমরাহ এক্সক্লুসিভ': '۱۲ روزہ وی آئی پی ۵-اسٹار خصوصی عمرہ',
+  'শিলচর (Silchar) / গুয়াহাটি': 'سلچر / گوہاٹی',
+  'শিলচর / কলকাতা (Kolkata)': 'سلچر / کولکتہ',
+  'গুয়াহাটি (GAU) / শিলচর': 'گوہاٹی / سلچر',
+  'কলকাতা (CCU) / দিল্লি (DEL)': 'کولکتہ (CCU) / دہلی (DEL)',
+  'রমজান ২০২৬ (পবিত্র লাইলাতুল কদর ও শেষ দশক)': 'رمضان ۲۰۲۶ (لیلۃ القدر اور آخری عشرہ)',
+  'প্রতি মাসের ১৫ ও ২৮ তারিখ': 'ہر مہینے کی ۱۵ اور ۲۸ تاریخ',
+  'আসন্ন শবে বরাত ও রজব কাফেলা': 'شب برات اور رجب کا خصوصی قافلہ',
+  'প্রতি সপ্তাহে নিয়মিত ফ্লাইট': 'ہر ہفتے باقاعدہ پروازیں',
+  'প্রতি সপ্তাহে নিয়মিত ফ্লাইট': 'ہر ہفتے باقاعدہ پروازیں',
+  'হোটেল আনোয়ার আল দিয়াহ (৩ তারকা)': 'ہوٹل انوار الدیہ (۳-اسٹار)',
+  'হোটেল আনোয়ার আল দিয়াহ': 'ہوٹل انوار الدیہ',
+  'হোটেল দার আল তাকাওয়া (৩ তারকা)': 'ہوٹل دار التقویٰ (۳-اسটار)',
+  'হোটেল দার আল তাকাওয়া': 'ہوٹل دار التقویٰ',
+  'হোটেল ফাহাদ গ্র্যান্ড (৪ তারকা)': 'ہوٹل فہد گرینڈ (۴-اسটار)',
+  'হোটেল ফাহাদ গ্র্যান্ড': 'ہوٹل فہد گرینڈ',
+  'হোটেল রওজা ভিউ ইন্টারন্যাশনাল (৪ তারকা)': 'ہوٹل روضہ ویو انٹرنیشنل (۴-اسটار)',
+  'হোটেল রওজা ভিউ ইন্টারন্যাশনাল': 'ہوٹل روضہ ویو انٹرنیشنل',
+  'হোটেল বরকত আল মাক্কি (ইকোনমি)': 'ہوٹل برکت المکی (اکانومی)',
+  'হোটেল বরকত আল মাক্ক (হকোনাম)': 'ہوٹل برکت المکی (اکانومی)',
+  'হোটেল মানারাত মদিনা': 'ہوٹل منارات مدینہ',
+  'সুইসোটেল আল মাকাম / ক্লক টাওয়ার (৫ তারকা)': 'سوئس ہوٹل المقام / کلاک ٹاور (۵-اسٹار)',
+  'সুইসোতেল আল মাকাম / ক্লক টাওয়ার (৫ তারকা)': 'سوئس ہوٹل المقام / کلاک ٹاور (۵-اسটار)',
+  'আনওয়ার আল মদিনা মোভেনপিক (৫ তারকা)': 'انوار المدینہ موون پک (۵-اسٹار)',
+  'আনোয়ার আল মদিনা মোভেনপিক (৫ তারকা)': 'انوار المدینہ موون پک (۵-اسٹار)',
+  'সৌদি উমরাহ ভিসা ও ইন্সুরেন্স': 'سعودی عمرہ ویزا اور انشورنس',
+  'রিটার্ন এয়ার টিকিট (শিলচর/গুয়াহাটি-জেদ্দা)': 'ریٹرن ایئر ٹکٹ (سلچر/گوہاٹی تا جدہ)',
+  'মক্কা ও মদিনায় ৩-স্টার হোটেল': 'مکہ اور مدینہ میں ۳-اسٹار ہوٹل',
+  '৩ বেলা সুস্বাদু দেশি বুফে খাবার': 'تین وقت کا لذیذ دیسی بوفے کھانا',
+  'মক্কা ও মদিনার ঐতিহাসিক স্থান জিয়ারত': 'مکہ و مدینہ کے تاریخی مقامات کی زیارت',
+  'শীতাতপ নিয়ন্ত্রিত ভিআইপি বাসে যাতায়াত': 'ایئرکنڈیشنڈ وی آئی پی بس ٹرانسپورٹ',
+  'অভিজ্ঞ আলেম ও মুয়াল্লিম গাইড': 'تجربہ کار عالم اور معلم گائیڈ',
+  '৫ লিটার পবিত্র জমজম পানি উপহার': '۵ لیٹر آب زم زم ہدیہ',
+  'উমরাহ কিট, ইহরাম ও ট্রাভেল ব্যাগ': 'عمرہ کٹ، احرام اور ٹریول بیگ',
+  'সৌদি আরব বায়োমেট্রিক ও ভিসা প্রসেসিং': 'سعودی بایومیٹرک اور ویزا پروسیسنگ',
+  'আন্তর্জাতিক এয়ারলাইন্স টিকিট': 'بین الاقوامی ایئرلائنز کا ٹکٹ',
+  'হারাম শরীফের খুব কাছে ৪-স্টার হোটেল': 'حرم شریف کے قریب ۴-اسٹار ہوٹل',
+  '৩ বেলা দেশি ভাত, মাছ-মাংস ও নাস্তা': 'تین وقت کا دیسی کھانا اور ناشتہ',
+  'ঐতিহাসিক বদর প্রান্তর, উহুদ ও জাবালে নূর জিয়ারত': 'تاریخی بدر، احد اور جبل نور کی زیارت',
+  'মুয়াল্লিমের নেতৃত্বে তাওয়াফ ও সাঈ': 'معلم کی زیر نگرانی طواف اور سعی',
+  '৫ লিটার খাঁটি জমজম পানি': '۵ لیٹر خالص آب زم زم',
+  'লাগেজ ট্রলি ব্যাগ ও পাসপোর্ট পাউচ': 'لگیج ٹرالی بیگ اور پاسپورٹ پاؤچ',
+  'মক্কা-মদিনা রুটে হারামাইন হাই-স্পিড ট্রেন সুবিধা': 'حرمین ہائی اسپیڈ ٹرین کی سہولت',
+  'উমরাহ ভিসা ও হেলথ ইন্সুরেন্স': 'عمرہ ویزا اور ہیلتھ انشورنس',
+  'উমরাহ ভিসা ও হেলথ ইন্স্যুরেন্স': 'عمرہ ویزا اور ہیلتھ انشورنس',
+  'রিটার্ন ফ্লাইটের টিকিট': 'ریٹرن فلائٹ ٹکٹ',
+  'মক্কা ও মদিনা হোটেল শেয়ারিং': 'مکہ اور مدینہ میں شیئرنگ ہوٹل',
+  'মক্কা ও মদিনা হোটেল শেয়ারিং': 'مکہ اور مدینہ میں شیئرنگ ہوٹل',
+  '৩ বেলা বাংলা খাবার সরবরাহ': 'تین وقت کا کھانا',
+  'মক্কার আরাফাত, মিনা, মুজদালিফা জিয়ারত': 'عرفات، منیٰ اور مزدلفہ کی زیارت',
+  'মদিনার মসজিদে কুবা ও কেবলাতাইন জিয়ারত': 'مدینہ میں مسجد قباء اور قبلتین کی زیارت',
+  '২৪ ঘণ্টা বাস শাটল সার্ভিস ও গাইড': '۲۴ گھنٹے شٹل بس سروس اور رہنمائی',
+  '৫ লিটার জমজম পানি গ্যারান্টিড': '۵ لیٹر آب زم زم',
+  'মাল্টিপল এন্ট্রি ১ বছরের ট্যুরিস্ট/উমরাহ ভিসা': 'ایک سال کا ملٹیپل انٹری عمرہ ویزا',
+  'এমিরেটস বা সাউদিয়া এয়ারলাইন্স বিজনেস/ইকোনমি টিকিট': 'امارات یا سعودیہ ایئرلائنز بزنس/اکانومی ٹکٹ',
+  'এমিরেটস বা সাউদিয়া এয়ারলাইন্স বিজনেস/ইকোনমি টিকিট': 'امارات یا سعودیہ ایئرلائنز بزنس/اکانومی ٹکٹ',
+  'ক্লক টাওয়ার ও হারামের আঙিনায় ৫-স্টার লাক্সারি হোটেল': 'کلاک ٹاور اور حرم کے احاطے میں ۵-اسٹار لگژری ہوٹل',
+  'ক্লক টাওয়ার ও হারামের আঙিনায় ৫-স্টার লাক্সারি হোটেল': 'کلاک ٹاور اور حرم کے احاطے میں ۵-اسٹار لگژری ہوٹل',
+  '৫ তারকা হোটেল ইন্টারন্যাশনাল বুফে ব্রেকফাস্ট ও ডিনার': '۵-اسٹار ہوٹل بین الاقوامی بوفے ناشتہ اور ڈنر',
+  'প্রাইভেট জিএমসি / লাক্সারি কারে বিমানবন্দর পিকআপ ও জিয়ারত': 'پرائیویٹ جی ایم سی لگژری کار ایئرپورٹ ٹرانسفر',
+  'ভিআইপি হারামাইন বুলেট ট্রেন ফার্স্ট ক্লাস টিকিট': 'وی آئی پی حرمین بلٹ ٹرین فرسٹ کلاس ٹکٹ',
+  'বিশেষ মোয়াল্লিম ও সার্বক্ষণিক বাংলা/উর্দু দোভাষী': 'خصوصی معلم اور مترجم کی سہولت',
+  '৫ লিটার জমজম পানি ও এক্সক্লুসিভ উপহার সামগ্রী': '۵ لیٹر آب زم زم اور خصوصی تحائف',
+  'উমরাহ ভিসা': 'عمرہ ویزا',
+  'হোটেল': 'ہوٹل',
+  'জিয়ারত': 'زیارت',
+  'গুয়াহাটি': 'گوہاٹی',
+  'কলকাতা': 'کولکتہ',
+  'দিল্লি': 'دہلی',
+  'শীঘ্রই': 'جلد ہی',
 };
 
 export function translateText(text: string | undefined, lang: AppLanguage | string = 'bn'): string {
@@ -505,3 +671,53 @@ export function getMosqueDisplay(vac: MosqueVacancy, lang: AppLanguage | string 
     description: (isEn ? vac.descriptionEn : undefined) || translateText(vac.description, lang),
   };
 }
+
+export function getUmrahDisplay(pkg: UmrahPackage, lang: AppLanguage | string = 'bn') {
+  if (lang === 'bn') {
+    return {
+      companyName: pkg.companyName,
+      officeLocation: pkg.officeLocation,
+      packageTitle: pkg.packageTitle,
+      departureCity: pkg.departureCity,
+      departureMonthOrDate: pkg.departureMonthOrDate,
+      makkahHotel: pkg.makkahHotel,
+      madinahHotel: pkg.madinahHotel,
+      inclusions: pkg.inclusions,
+      description: pkg.description || '',
+    };
+  }
+
+  const isEn = lang === 'en';
+  const isUr = lang === 'ur';
+
+  return {
+    companyName:
+      (isEn ? pkg.companyNameEn : isUr ? pkg.companyNameUr : undefined) ||
+      translateText(pkg.companyName, lang),
+    officeLocation:
+      (isEn ? pkg.officeLocationEn : isUr ? pkg.officeLocationUr : undefined) ||
+      translateText(pkg.officeLocation, lang),
+    packageTitle:
+      (isEn ? pkg.packageTitleEn : isUr ? pkg.packageTitleUr : undefined) ||
+      translateText(pkg.packageTitle, lang),
+    departureCity:
+      (isEn ? pkg.departureCityEn : isUr ? pkg.departureCityUr : undefined) ||
+      translateText(pkg.departureCity, lang),
+    departureMonthOrDate:
+      (isEn ? pkg.departureMonthOrDateEn : isUr ? pkg.departureMonthOrDateUr : undefined) ||
+      translateText(pkg.departureMonthOrDate, lang),
+    makkahHotel:
+      (isEn ? pkg.makkahHotelEn : isUr ? pkg.makkahHotelUr : undefined) ||
+      translateText(pkg.makkahHotel, lang),
+    madinahHotel:
+      (isEn ? pkg.madinahHotelEn : isUr ? pkg.madinahHotelUr : undefined) ||
+      translateText(pkg.madinahHotel, lang),
+    inclusions:
+      (isEn ? pkg.inclusionsEn : isUr ? pkg.inclusionsUr : undefined) ||
+      translateArray(pkg.inclusions, lang),
+    description:
+      (isEn ? pkg.descriptionEn : isUr ? pkg.descriptionUr : undefined) ||
+      translateText(pkg.description, lang),
+  };
+}
+
