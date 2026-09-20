@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Building2, MapPin, Phone, MessageCircle, Briefcase, IndianRupee, ShieldCheck } from 'lucide-react';
 import { MosqueVacancy, AppLanguage } from '../types';
 
@@ -7,6 +7,7 @@ interface MosqueVacancyFormModalProps {
   onClose: () => void;
   onSave: (vacancy: MosqueVacancy) => void;
   lang?: AppLanguage;
+  initialData?: MosqueVacancy | null;
 }
 
 const COMMON_FACILITIES_OFFERED = [
@@ -31,6 +32,8 @@ export const MosqueVacancyFormModal: React.FC<MosqueVacancyFormModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  lang = 'bn',
+  initialData = null,
 }) => {
   const [mosqueName, setMosqueName] = useState('');
   const [area, setArea] = useState('');
@@ -56,6 +59,60 @@ export const MosqueVacancyFormModal: React.FC<MosqueVacancyFormModalProps> = ({
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [description, setDescription] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (initialData) {
+      setMosqueName(initialData.mosqueName || '');
+      setArea(initialData.area || '');
+      setDistrict(initialData.district || 'কাছাড়, আসাম');
+      setPosition(initialData.position || 'পেশ ইমাম ও খতীব');
+      setRequiredQualification(initialData.requiredQualification || '');
+      setExperienceRequired(initialData.experienceRequired || '১-২ বছরের অভিজ্ঞতা');
+      setOfferedSalary(String(initialData.offeredSalary || 15000));
+      setSelectedFacilities(initialData.facilitiesOffered || [
+        'মসজিদ সংলগ্ন সুসজ্জিত একক কামরা',
+        'কমিটি কর্তৃক তিন বেলা খাবার সুব্যবস্থা',
+        'ফ্রি বিদ্যুৎ ও পানির ব্যবস্থা',
+        'ঈদুল ফিতর ও ঈদুল আজহায় আকর্ষণীয় বোনাস',
+      ]);
+      setSelectedResponsibilities(initialData.responsibilities || [
+        '৫ ওয়াক্ত ফরজ নামাজের ইমামতি',
+        'শুক্রবার জুমআর নামাজে বিষয়ভিত্তিক বয়ান ও খুতবা পাঠ',
+        'সকালে নূরানী মক্তবে শিশুদের সহীহ কুরআন শিক্ষা দান',
+      ]);
+      setJoiningDeadline(initialData.joiningDeadline || 'অবিলম্বে');
+      setContactPerson(initialData.contactPerson || '');
+      setContactPhone(initialData.contactPhone || '');
+      setWhatsappNumber(initialData.whatsappNumber || '');
+      setDescription(initialData.description || '');
+      setErrorMsg('');
+    } else if (isOpen) {
+      setMosqueName('');
+      setArea('');
+      setDistrict('কাছাড়, আসাম');
+      setPosition('পেশ ইমাম ও খতীব');
+      setRequiredQualification('');
+      setExperienceRequired('১-২ বছরের অভিজ্ঞতা');
+      setOfferedSalary('15000');
+      setSelectedFacilities([
+        'মসজিদ সংলগ্ন সুসজ্জিত একক কামরা',
+        'কমিটি কর্তৃক তিন বেলা খাবার সুব্যবস্থা',
+        'ফ্রি বিদ্যুৎ ও পানির ব্যবস্থা',
+        'ঈদুল ফিতর ও ঈদুল আজহায় আকর্ষণীয় বোনাস',
+      ]);
+      setSelectedResponsibilities([
+        '৫ ওয়াক্ত ফরজ নামাজের ইমামতি',
+        'শুক্রবার জুমআর নামাজে বিষয়ভিত্তিক বয়ান ও খুতবা পাঠ',
+        'সকালে নূরানী মক্তবে শিশুদের সহীহ কুরআন শিক্ষা দান',
+      ]);
+      setJoiningDeadline('অবিলম্বে');
+      setContactPerson('');
+      setContactPhone('');
+      setWhatsappNumber('');
+      setDescription('');
+      setErrorMsg('');
+    }
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -89,8 +146,8 @@ export const MosqueVacancyFormModal: React.FC<MosqueVacancyFormModalProps> = ({
     const phoneFinal = contactPhone.trim() || whatsappNumber.trim();
     const waFinal = whatsappNumber.trim() || phoneFinal;
 
-    const newVacancy: MosqueVacancy = {
-      id: 'mosque-' + Date.now(),
+    const savedVacancy: MosqueVacancy = {
+      id: initialData?.id || 'mosque-' + Date.now(),
       mosqueName: mosqueName.trim(),
       area: area.trim(),
       district: district.trim(),
@@ -105,11 +162,11 @@ export const MosqueVacancyFormModal: React.FC<MosqueVacancyFormModalProps> = ({
       contactPhone: phoneFinal,
       whatsappNumber: waFinal,
       description: description.trim(),
-      createdAt: Date.now(),
+      createdAt: initialData?.createdAt || Date.now(),
       isCustomSubmission: true,
     };
 
-    onSave(newVacancy);
+    onSave(savedVacancy);
     onClose();
   };
 
@@ -124,10 +181,14 @@ export const MosqueVacancyFormModal: React.FC<MosqueVacancyFormModalProps> = ({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                মসজিদ কমিটির নিয়োগ বিজ্ঞপ্তি দিন
+                {initialData
+                  ? (lang === 'en' ? 'Edit Mosque Vacancy' : lang === 'ur' ? 'مسجد کی بھرتی کا اشتہار ترمیم کریں' : 'মসজিদের নিয়োগ বিজ্ঞপ্তি সম্পাদনা করুন')
+                  : (lang === 'en' ? 'Post Mosque Vacancy' : lang === 'ur' ? 'مسجد کی بھرتی کا اشتہار دیں' : 'মসজিদ কমিটির নিয়োগ বিজ্ঞপ্তি দিন')}
               </h3>
               <p className="text-xs text-emerald-300/80">
-                যোগ্য ও সুন্নতের পাবন্দ ইমাম, খতীব বা মুয়াজ্জিন খোঁজার জন্য বায়োডাটা
+                {initialData
+                  ? (lang === 'en' ? 'Update job requirements and honorarium' : 'নিয়োগ বিজ্ঞপ্তির পদ ও শর্তাবলী আপডেট করুন')
+                  : (lang === 'en' ? 'Post job opening for Imam, Khatib or Muazzin' : 'যোগ্য ও সুন্নতের পাবন্দ ইমাম, খতীব বা মুয়াজ্জিন খোঁজার জন্য বিজ্ঞপ্তি')}
               </p>
             </div>
           </div>
@@ -390,14 +451,18 @@ export const MosqueVacancyFormModal: React.FC<MosqueVacancyFormModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 font-semibold transition-colors"
             >
-              বাতিল
+              {lang === 'en' ? 'Cancel' : lang === 'ur' ? 'منسوخ' : 'বাতিল'}
             </button>
             <button
               type="submit"
               className="px-5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold shadow-md transition-all active:scale-95 flex items-center gap-1.5"
             >
               <Sparkles className="w-4 h-4" />
-              <span>নিয়োগ বিজ্ঞপ্তি প্রকাশ করুন</span>
+              <span>
+                {initialData
+                  ? (lang === 'en' ? 'Update Vacancy' : lang === 'ur' ? 'اشتہار اپ ڈیٹ کریں' : 'বিজ্ঞপ্তি আপডেট করুন')
+                  : (lang === 'en' ? 'Publish Vacancy' : lang === 'ur' ? 'اشتہار شائع کریں' : 'নিয়োগ বিজ্ঞপ্তি প্রকাশ করুন')}
+              </span>
             </button>
           </div>
         </form>

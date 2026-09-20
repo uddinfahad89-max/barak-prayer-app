@@ -12,6 +12,8 @@ import {
   ShieldCheck,
   Building2,
   Heart,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { ImamBiodata, AppLanguage } from '../types';
 import { getImamDisplay } from '../utils/portalTranslations';
@@ -21,6 +23,8 @@ interface ImamBiodataDetailModalProps {
   onClose: () => void;
   biodata: ImamBiodata | null;
   lang?: AppLanguage;
+  onEdit?: (biodata: ImamBiodata) => void;
+  onDelete?: (biodata: ImamBiodata) => void;
 }
 
 export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
@@ -28,6 +32,8 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
   onClose,
   biodata,
   lang = 'bn',
+  onEdit,
+  onDelete,
 }) => {
   if (!isOpen || !biodata) return null;
 
@@ -79,12 +85,36 @@ export const ImamBiodataDetailModal: React.FC<ImamBiodataDetailModalProps> = ({
               </h3>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/50 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {biodata.isCustomSubmission && onEdit && (
+              <button
+                onClick={() => onEdit(biodata)}
+                className="px-2.5 py-1.5 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] font-bold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
+                title={lang === 'en' ? 'Edit Biodata' : 'বায়োডাটা এডিট করুন'}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
+              </button>
+            )}
+
+            {biodata.isCustomSubmission && onDelete && (
+              <button
+                onClick={() => onDelete(biodata)}
+                className="px-2.5 py-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/50 font-semibold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
+                title={lang === 'en' ? 'Delete Biodata' : 'বায়োডাটা মুছুন'}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Delete' : 'মুছুন'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/50 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}

@@ -22,6 +22,8 @@ import {
   Plane,
   UserCheck,
   HeartHandshake,
+  Edit3,
+  Plus,
 } from 'lucide-react';
 import { QiblaModal } from './QiblaModal';
 import { TasbihModal } from './TasbihModal';
@@ -35,6 +37,7 @@ import { ImamMatrimonyView } from './ImamMatrimonyView';
 import { ImamPortalModal } from './ImamPortalModal';
 import { LocationMeta, AppLanguage } from '../types';
 import { TRANSLATIONS, getPrayerName } from '../utils/translations';
+import { formatToIndian12Hour } from '../utils/prayerCalc';
 
 interface MuslimAppViewProps {
   // Navigation & Location
@@ -55,6 +58,9 @@ interface MuslimAppViewProps {
   nextPrayerTime: string;
   sunriseTime: string;
   minutesToNext: number;
+  // Mosque Jamaat Times
+  mosqueName?: string;
+  jamaatTimes?: { [key: string]: string };
   // Modals & Settings
   onOpenMosqueSettings: () => void;
   prayersChildren: React.ReactNode;
@@ -80,6 +86,8 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
   nextPrayerTime,
   sunriseTime,
   minutesToNext,
+  mosqueName = '',
+  jamaatTimes,
   onOpenMosqueSettings,
   prayersChildren,
   lang = 'en',
@@ -150,6 +158,21 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
 
   // Next prayer localized display name
   const localizedPrayerName = getPrayerName(nextPrayerName || 'Fajr', lang);
+
+  const PRAYER_KEYS = [
+    { key: 'Fajr', labelEn: 'Fajr', labelBn: 'ফজর', labelUr: 'فجر' },
+    { key: 'Dhuhr', labelEn: 'Dhuhr', labelBn: 'যোহর', labelUr: 'ظہر' },
+    { key: 'Asr', labelEn: 'Asr', labelBn: 'আসর', labelUr: 'عصر' },
+    { key: 'Maghrib', labelEn: 'Maghrib', labelBn: 'মাগরিব', labelUr: 'مغرب' },
+    { key: 'Isha', labelEn: 'Isha', labelBn: 'এশা', labelUr: 'عشاء' },
+  ];
+
+  const hasCustomJamaatTimes = Boolean(
+    jamaatTimes &&
+      Object.values(jamaatTimes).some((val) => typeof val === 'string' && val.trim().length > 0)
+  );
+
+  const nextJamaatTime = (jamaatTimes && nextPrayerName && jamaatTimes[nextPrayerName]) || '';
 
   const remainingHours = Math.floor(minutesToNext / 60);
   const remainingMins = minutesToNext % 60;
@@ -328,6 +351,19 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                     </span>
                   )}
                 </div>
+
+                {/* Local Mosque Congregation Time pill if configured */}
+                {nextJamaatTime && (
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#E2A336]/15 border border-[#E2A336]/30 text-[#E2A336] text-xs font-semibold">
+                    <Building2 className="w-3.5 h-3.5 shrink-0 text-[#E2A336]" />
+                    <span className="text-emerald-200/90 font-medium">
+                      {lang === 'en' ? 'Mosque Jamaat:' : lang === 'ur' ? 'مسجد میں جماعت:' : 'মসজিদে জামাত:'}
+                    </span>
+                    <span className="text-white font-bold">
+                      {formatToIndian12Hour(nextJamaatTime)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Location Status Message (if detecting or detected) */}
@@ -349,6 +385,123 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* 3.1 Mosque Jamaat Timetable Card (Rendered below main prayer card) */}
+            {hasCustomJamaatTimes ? (
+              <div
+                id="mosque-jamaat-timetable-card"
+                className="bg-[#09332E] border border-[#E2A336]/40 hover:border-[#E2A336]/60 rounded-2xl p-4 shadow-xl transition-all relative overflow-hidden group"
+              >
+                {/* Background soft glow */}
+                <div className="absolute -top-10 -right-10 w-28 h-28 bg-[#E2A336]/10 rounded-full blur-2xl pointer-events-none" />
+
+                {/* Header */}
+                <div className="flex items-center justify-between gap-2.5 mb-3 relative z-10">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-[#E2A336]/20 border border-[#E2A336]/30 flex items-center justify-center text-[#E2A336] shrink-0">
+                      <Building2 className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h4 className="text-xs sm:text-sm font-bold text-white truncate">
+                          {mosqueName || (lang === 'en' ? 'My Mosque Jamaat Times' : lang === 'ur' ? 'میری مسجد کا ٹائم ٹیبل' : 'আমার মসজিদের জামাত সময়সূচি')}
+                        </h4>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold shrink-0">
+                          {lang === 'en' ? '🕌 Jamaat' : lang === 'ur' ? '🕌 جماعت' : '🕌 জামাত টাইম'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[#90A8A3] truncate">
+                        {lang === 'en'
+                          ? 'Local congregation timetable & alert'
+                          : lang === 'ur'
+                          ? 'مقامی باجماعت نماز کا وقت'
+                          : 'মসজিদের জামাতের নির্ধারিত সময়সূচি ও এলার্ট'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={onOpenMosqueSettings}
+                    className="px-2.5 py-1 rounded-lg bg-[#E2A336]/15 hover:bg-[#E2A336]/25 border border-[#E2A336]/40 text-[#E2A336] hover:text-white text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                    title={lang === 'en' ? 'Edit mosque timetable' : 'মসজিদের জামাত সময় পরিবর্তন করুন'}
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
+                  </button>
+                </div>
+
+                {/* 5-Waqt Horizontal Timetable Grid */}
+                <div className="grid grid-cols-5 gap-1.5 sm:gap-2 relative z-10">
+                  {PRAYER_KEYS.map((item) => {
+                    const rawTime = jamaatTimes?.[item.key] || '';
+                    const formatted = rawTime ? formatToIndian12Hour(rawTime) : '--:--';
+                    const isNext = (nextPrayerName || '').toLowerCase() === item.key.toLowerCase();
+                    const prayerNameLocalized =
+                      lang === 'en' ? item.labelEn : lang === 'ur' ? item.labelUr : item.labelBn;
+
+                    return (
+                      <div
+                        key={item.key}
+                        className={`p-2 rounded-xl text-center border transition-all ${
+                          isNext
+                            ? 'bg-[#E2A336]/20 border-[#E2A336] shadow-sm ring-1 ring-[#E2A336]/50'
+                            : rawTime
+                            ? 'bg-[#03221F]/70 border-white/5 hover:border-white/15'
+                            : 'bg-black/20 border-white/5 opacity-50'
+                        }`}
+                      >
+                        <div className={`text-[10px] sm:text-xs font-medium ${isNext ? 'text-[#E2A336] font-bold' : 'text-[#90A8A3]'}`}>
+                          {prayerNameLocalized}
+                        </div>
+                        <div className={`text-xs sm:text-sm font-extrabold mt-0.5 tracking-tight ${isNext ? 'text-white' : rawTime ? 'text-white' : 'text-stone-500'}`}>
+                          {formatted}
+                        </div>
+                        {isNext && (
+                          <span className="inline-block mt-1 text-[8px] font-bold text-[#03221F] bg-[#E2A336] px-1 py-0.2 rounded-full">
+                            {lang === 'en' ? 'Next' : lang === 'ur' ? 'اگلی' : 'পরবর্তী'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div
+                id="mosque-jamaat-timetable-prompt"
+                className="bg-[#09332E]/70 hover:bg-[#09332E] border border-white/10 hover:border-[#E2A336]/30 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 transition-colors group"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#E2A336] group-hover:bg-[#E2A336]/10 transition-colors shrink-0">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs sm:text-sm font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                      {lang === 'en'
+                        ? 'Add Mosque Jamaat Timetable'
+                        : lang === 'ur'
+                        ? 'مسجد کے اوقاتِ جماعت شامل کریں'
+                        : 'মসজিদের নামাজের টাইম টেবিল যুক্ত করুন'}
+                    </h4>
+                    <p className="text-[10px] sm:text-[11px] text-[#90A8A3] truncate">
+                      {lang === 'en'
+                        ? 'Display your local mosque times right here'
+                        : lang === 'ur'
+                        ? 'یہاں اپنی مسجد کا ٹائم ٹیبل دکھائیں'
+                        : 'এখানে আপনার মসজিদের জামাত সময় প্রদর্শন করতে টাইম টেবিল সেট করুন'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={onOpenMosqueSettings}
+                  className="px-3 py-1.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center gap-1 transition-transform active:scale-95 cursor-pointer shrink-0 shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{lang === 'en' ? 'Add Times' : lang === 'ur' ? 'ٹائم جوڑیں' : 'টাইম যোগ করুন'}</span>
+                </button>
+              </div>
+            )}
 
             {/* 4. Features Section Header & Horizontal Row */}
             <div className="pt-2">

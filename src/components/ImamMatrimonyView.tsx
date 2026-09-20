@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   Trash2,
+  Edit3,
   Share2,
   Users,
   SlidersHorizontal,
@@ -145,6 +146,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
   const [isMosqueFormOpen, setIsMosqueFormOpen] = useState(false);
   const [isMatrimonyFormOpen, setIsMatrimonyFormOpen] = useState(false);
 
+  const [editingImam, setEditingImam] = useState<ImamBiodata | null>(null);
+  const [editingVacancy, setEditingVacancy] = useState<MosqueVacancy | null>(null);
+  const [editingMatrimony, setEditingMatrimony] = useState<MatrimonyBiodata | null>(null);
+
   const [selectedImamDetail, setSelectedImamDetail] = useState<ImamBiodata | null>(null);
   const [selectedVacancyDetail, setSelectedVacancyDetail] = useState<MosqueVacancy | null>(null);
   const [selectedMatrimonyDetail, setSelectedMatrimonyDetail] = useState<MatrimonyBiodata | null>(null);
@@ -161,22 +166,67 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-  const handleAddImam = (newImam: ImamBiodata) => {
-    setImams((prev) => [newImam, ...prev]);
-    if (onAddCoin) onAddCoin(20);
-    showToast('মাশাআল্লাহ! আপনার বায়োডাটা সফলভাবে যুক্ত হয়েছে। (+২০ কয়েন)');
+  const handleSaveImam = (savedImam: ImamBiodata) => {
+    setImams((prev) => {
+      const exists = prev.some((item) => item.id === savedImam.id);
+      if (exists) {
+        return prev.map((item) => (item.id === savedImam.id ? savedImam : item));
+      }
+      return [savedImam, ...prev];
+    });
+    if (selectedImamDetail && selectedImamDetail.id === savedImam.id) {
+      setSelectedImamDetail(savedImam);
+    }
+    const isEditing = !!editingImam;
+    setEditingImam(null);
+    if (!isEditing && onAddCoin) onAddCoin(20);
+    showToast(
+      isEditing
+        ? (lang === 'en' ? 'Biodata updated successfully!' : 'ইমাম সাহেবের বায়োডাটা সফলভাবে আপডেট করা হয়েছে।')
+        : (lang === 'en' ? 'Biodata published successfully! (+20 Coins)' : 'মাশাআল্লাহ! আপনার বায়োডাটা সফলভাবে যুক্ত হয়েছে। (+২০ কয়েন)')
+    );
   };
 
-  const handleAddVacancy = (newVac: MosqueVacancy) => {
-    setVacancies((prev) => [newVac, ...prev]);
-    if (onAddCoin) onAddCoin(20);
-    showToast('আলহামদুলিল্লাহ! মসজিদের নিয়োগ বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে। (+২০ কয়েন)');
+  const handleSaveVacancy = (savedVac: MosqueVacancy) => {
+    setVacancies((prev) => {
+      const exists = prev.some((item) => item.id === savedVac.id);
+      if (exists) {
+        return prev.map((item) => (item.id === savedVac.id ? savedVac : item));
+      }
+      return [savedVac, ...prev];
+    });
+    if (selectedVacancyDetail && selectedVacancyDetail.id === savedVac.id) {
+      setSelectedVacancyDetail(savedVac);
+    }
+    const isEditing = !!editingVacancy;
+    setEditingVacancy(null);
+    if (!isEditing && onAddCoin) onAddCoin(20);
+    showToast(
+      isEditing
+        ? (lang === 'en' ? 'Vacancy post updated successfully!' : 'নিয়োগ বিজ্ঞপ্তিটি সফলভাবে আপডেট করা হয়েছে।')
+        : (lang === 'en' ? 'Vacancy post published successfully! (+20 Coins)' : 'আলহামদুলিল্লাহ! মসজিদের নিয়োগ বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে। (+২০ কয়েন)')
+    );
   };
 
-  const handleAddMatrimony = (newMat: MatrimonyBiodata) => {
-    setMatrimonials((prev) => [newMat, ...prev]);
-    if (onAddCoin) onAddCoin(20);
-    showToast('মাশাআল্লাহ! পাত্র/পাত্রীর বায়োডাটা সফলভাবে সংরক্ষিত হয়েছে। (+২০ কয়েন)');
+  const handleSaveMatrimony = (savedMat: MatrimonyBiodata) => {
+    setMatrimonials((prev) => {
+      const exists = prev.some((item) => item.id === savedMat.id);
+      if (exists) {
+        return prev.map((item) => (item.id === savedMat.id ? savedMat : item));
+      }
+      return [savedMat, ...prev];
+    });
+    if (selectedMatrimonyDetail && selectedMatrimonyDetail.id === savedMat.id) {
+      setSelectedMatrimonyDetail(savedMat);
+    }
+    const isEditing = !!editingMatrimony;
+    setEditingMatrimony(null);
+    if (!isEditing && onAddCoin) onAddCoin(20);
+    showToast(
+      isEditing
+        ? (lang === 'en' ? 'Biodata updated successfully!' : 'পাত্র/পাত্রীর বায়োডাটা সফলভাবে আপডেট করা হয়েছে।')
+        : (lang === 'en' ? 'Biodata published successfully! (+20 Coins)' : 'মাশাআল্লাহ! পাত্র/পাত্রীর বায়োডাটা সফলভাবে সংরক্ষিত হয়েছে। (+২০ কয়েন)')
+    );
   };
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'imam' | 'vacancy' | 'matrimony'; id: string; title: string } | null>(null);
@@ -185,12 +235,21 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
     if (!deleteTarget) return;
     if (deleteTarget.type === 'imam') {
       setImams((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      if (selectedImamDetail && selectedImamDetail.id === deleteTarget.id) {
+        setSelectedImamDetail(null);
+      }
       showToast(lang === 'en' ? 'Biodata deleted.' : 'বায়োডাটা মুছে ফেলা হয়েছে।');
     } else if (deleteTarget.type === 'vacancy') {
       setVacancies((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      if (selectedVacancyDetail && selectedVacancyDetail.id === deleteTarget.id) {
+        setSelectedVacancyDetail(null);
+      }
       showToast(lang === 'en' ? 'Vacancy post deleted.' : 'বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে।');
     } else {
       setMatrimonials((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      if (selectedMatrimonyDetail && selectedMatrimonyDetail.id === deleteTarget.id) {
+        setSelectedMatrimonyDetail(null);
+      }
       showToast(lang === 'en' ? 'Biodata deleted.' : 'পাত্র/পাত্রীর বায়োডাটা মুছে ফেলা হয়েছে।');
     }
     setDeleteTarget(null);
@@ -350,7 +409,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
           <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             {activeSubTab === 'matrimony' && (
               <button
-                onClick={() => setIsMatrimonyFormOpen(true)}
+                onClick={() => {
+                  setEditingMatrimony(null);
+                  setIsMatrimonyFormOpen(true);
+                }}
                 className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -360,7 +422,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
             {activeSubTab === 'imams' && (
               <button
-                onClick={() => setIsImamFormOpen(true)}
+                onClick={() => {
+                  setEditingImam(null);
+                  setIsImamFormOpen(true);
+                }}
                 className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -370,7 +435,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
             {activeSubTab === 'mosques' && (
               <button
-                onClick={() => setIsMosqueFormOpen(true)}
+                onClick={() => {
+                  setEditingVacancy(null);
+                  setIsMosqueFormOpen(true);
+                }}
                 className="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -654,7 +722,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
             </span>
 
             <button
-              onClick={() => setIsMatrimonyFormOpen(true)}
+              onClick={() => {
+                setEditingMatrimony(null);
+                setIsMatrimonyFormOpen(true);
+              }}
               className="text-xs text-[#E2A336] font-bold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -730,16 +801,28 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                       </div>
 
                       {mat.isCustomSubmission && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteTarget({ type: 'matrimony', id: mat.id, title: dMat.fullName });
-                          }}
-                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => {
+                              setEditingMatrimony(mat);
+                              setIsMatrimonyFormOpen(true);
+                            }}
+                            className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                            title={lang === 'en' ? 'Edit Biodata' : 'বায়োডাটা এডিট'}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({ type: 'matrimony', id: mat.id, title: dMat.fullName });
+                            }}
+                            className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
+                            title={lang === 'en' ? 'Delete' : 'মুছুন'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -871,7 +954,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
             </span>
 
             <button
-              onClick={() => setIsMosqueFormOpen(true)}
+              onClick={() => {
+                setEditingVacancy(null);
+                setIsMosqueFormOpen(true);
+              }}
               className="text-xs text-[#E2A336] font-bold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -921,16 +1007,28 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                       </div>
 
                       {v.isCustomSubmission && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteTarget({ type: 'vacancy', id: v.id, title: dMosque.mosqueName });
-                          }}
-                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => {
+                              setEditingVacancy(v);
+                              setIsMosqueFormOpen(true);
+                            }}
+                            className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                            title={lang === 'en' ? 'Edit Vacancy' : 'বিজ্ঞপ্তি এডিট'}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({ type: 'vacancy', id: v.id, title: dMosque.mosqueName });
+                            }}
+                            className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
+                            title={lang === 'en' ? 'Delete' : 'মুছুন'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -1029,7 +1127,10 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
             </span>
 
             <button
-              onClick={() => setIsImamFormOpen(true)}
+              onClick={() => {
+                setEditingImam(null);
+                setIsImamFormOpen(true);
+              }}
               className="text-xs text-[#E2A336] font-bold hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -1087,16 +1188,28 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                       </div>
 
                       {im.isCustomSubmission && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteTarget({ type: 'imam', id: im.id, title: dImam.fullName });
-                          }}
-                          className="p-1 rounded-lg text-rose-400 hover:bg-rose-950 transition-colors cursor-pointer"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => {
+                              setEditingImam(im);
+                              setIsImamFormOpen(true);
+                            }}
+                            className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                            title={lang === 'en' ? 'Edit Biodata' : 'বায়োডাটা এডিট'}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({ type: 'imam', id: im.id, title: dImam.fullName });
+                            }}
+                            className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
+                            title={lang === 'en' ? 'Delete' : 'মুছুন'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       )}
                     </div>
 
@@ -1220,23 +1333,35 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
 
       <ImamBiodataFormModal
         isOpen={isImamFormOpen}
-        onClose={() => setIsImamFormOpen(false)}
-        onSave={handleAddImam}
+        onClose={() => {
+          setIsImamFormOpen(false);
+          setEditingImam(null);
+        }}
+        onSave={handleSaveImam}
         lang={lang}
+        initialData={editingImam}
       />
 
       <MosqueVacancyFormModal
         isOpen={isMosqueFormOpen}
-        onClose={() => setIsMosqueFormOpen(false)}
-        onSave={handleAddVacancy}
+        onClose={() => {
+          setIsMosqueFormOpen(false);
+          setEditingVacancy(null);
+        }}
+        onSave={handleSaveVacancy}
         lang={lang}
+        initialData={editingVacancy}
       />
 
       <MatrimonyBiodataFormModal
         isOpen={isMatrimonyFormOpen}
-        onClose={() => setIsMatrimonyFormOpen(false)}
-        onSave={handleAddMatrimony}
+        onClose={() => {
+          setIsMatrimonyFormOpen(false);
+          setEditingMatrimony(null);
+        }}
+        onSave={handleSaveMatrimony}
         lang={lang}
+        initialData={editingMatrimony}
       />
 
       <ImamBiodataDetailModal
@@ -1244,6 +1369,13 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
         onClose={() => setSelectedImamDetail(null)}
         biodata={selectedImamDetail}
         lang={lang}
+        onEdit={(biodata) => {
+          setEditingImam(biodata);
+          setIsImamFormOpen(true);
+        }}
+        onDelete={(biodata) => {
+          setDeleteTarget({ type: 'imam', id: biodata.id, title: biodata.fullName });
+        }}
       />
 
       <MosqueVacancyDetailModal
@@ -1251,6 +1383,13 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
         onClose={() => setSelectedVacancyDetail(null)}
         vacancy={selectedVacancyDetail}
         lang={lang}
+        onEdit={(vac) => {
+          setEditingVacancy(vac);
+          setIsMosqueFormOpen(true);
+        }}
+        onDelete={(vac) => {
+          setDeleteTarget({ type: 'vacancy', id: vac.id, title: vac.mosqueName });
+        }}
       />
 
       <MatrimonyBiodataDetailModal
@@ -1258,6 +1397,13 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
         onClose={() => setSelectedMatrimonyDetail(null)}
         biodata={selectedMatrimonyDetail}
         lang={lang}
+        onEdit={(biodata) => {
+          setEditingMatrimony(biodata);
+          setIsMatrimonyFormOpen(true);
+        }}
+        onDelete={(biodata) => {
+          setDeleteTarget({ type: 'matrimony', id: biodata.id, title: biodata.fullName });
+        }}
       />
     </div>
   );

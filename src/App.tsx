@@ -719,6 +719,7 @@ export default function App() {
               onDetectLocation={detectUserLocation}
               onClearDetectedLocation={handleClearDetectedLocation}
               mosqueName={mosqueName}
+              jamaatTimes={jamaatTimes}
               onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
               hijriAdjustment={hijriAdjustment}
               onOpenArabicCalendar={() => setActiveTab('arabic')}

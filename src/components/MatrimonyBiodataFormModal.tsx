@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, HeartHandshake, CheckCircle2, ShieldCheck, Sparkles, User, Users } from 'lucide-react';
 import { MatrimonyBiodata, AppLanguage } from '../types';
 
@@ -7,6 +7,7 @@ interface MatrimonyBiodataFormModalProps {
   onClose: () => void;
   onSave: (biodata: MatrimonyBiodata) => void;
   lang?: AppLanguage;
+  initialData?: MatrimonyBiodata | null;
 }
 
 export const MatrimonyBiodataFormModal: React.FC<MatrimonyBiodataFormModalProps> = ({
@@ -14,6 +15,7 @@ export const MatrimonyBiodataFormModal: React.FC<MatrimonyBiodataFormModalProps>
   onClose,
   onSave,
   lang = 'bn',
+  initialData = null,
 }) => {
   const [type, setType] = useState<'groom' | 'bride'>('groom');
   const [fullName, setFullName] = useState('');
@@ -40,6 +42,52 @@ export const MatrimonyBiodataFormModal: React.FC<MatrimonyBiodataFormModalProps>
     '৫ ওয়াক্ত নামাজি',
     'হালাল উপার্জনে যত্নশীল',
   ]);
+
+  useEffect(() => {
+    if (initialData) {
+      setType(initialData.type || 'groom');
+      setFullName(initialData.fullName || '');
+      setCodeName(initialData.codeName || '');
+      setAge(initialData.age || 26);
+      setHeight(initialData.height || "5' 6\"");
+      setComplexion(initialData.complexion || 'উজ্জ্বল শ্যামলা');
+      setMaritalStatus(initialData.maritalStatus || 'অবিবাহিত');
+      setEducation(initialData.education || '');
+      setProfession(initialData.profession || '');
+      setMonthlyIncome(initialData.monthlyIncome || '');
+      setFatherOccupation(initialData.fatherOccupation || '');
+      setDistrict(initialData.district || 'কাছাড়');
+      setArea(initialData.area || '');
+      setFamilyType(initialData.familyType || 'দ্বীনদার সম্ভ্রান্ত সুন্নি পরিবার');
+      setPartnerExpectations(initialData.partnerExpectations || '');
+      setGuardianRelation(initialData.guardianRelation || 'পিতা');
+      setGuardianPhone(initialData.guardianPhone || '');
+      setWhatsappNumber(initialData.whatsappNumber || '');
+      setBioNotes(initialData.bioNotes || '');
+      setSelectedPractices(initialData.religiousPractices || ['৫ ওয়াক্ত নামাজি', 'হালাল উপার্জনে যত্নশীল']);
+    } else if (isOpen) {
+      setType('groom');
+      setFullName('');
+      setCodeName('');
+      setAge(26);
+      setHeight("5' 6\"");
+      setComplexion('উজ্জ্বল শ্যামলা');
+      setMaritalStatus('অবিবাহিত');
+      setEducation('');
+      setProfession('');
+      setMonthlyIncome('');
+      setFatherOccupation('');
+      setDistrict('কাছাড়');
+      setArea('');
+      setFamilyType('দ্বীনদার সম্ভ্রান্ত সুন্নি পরিবার');
+      setPartnerExpectations('');
+      setGuardianRelation('পিতা');
+      setGuardianPhone('');
+      setWhatsappNumber('');
+      setBioNotes('');
+      setSelectedPractices(['৫ ওয়াক্ত নামাজি', 'হালাল উপার্জনে যত্নশীল']);
+    }
+  }, [initialData, isOpen]);
 
   const practiceOptions = [
     '৫ ওয়াক্ত নামাজি',
@@ -75,8 +123,8 @@ export const MatrimonyBiodataFormModal: React.FC<MatrimonyBiodataFormModalProps>
       ? `পাত্র-${Math.floor(100 + Math.random() * 900)} (${profession || 'চাকরিজীবী'})`
       : `পাত্রী-${Math.floor(200 + Math.random() * 900)} (${profession || 'শিক্ষিতা'})`;
 
-    const newBiodata: MatrimonyBiodata = {
-      id: `mat-${Date.now()}`,
+    const savedBiodata: MatrimonyBiodata = {
+      id: initialData?.id || `mat-${Date.now()}`,
       type,
       fullName: fullName.trim(),
       codeName: generatedCode,
@@ -98,12 +146,12 @@ export const MatrimonyBiodataFormModal: React.FC<MatrimonyBiodataFormModalProps>
       guardianPhone: guardianPhone.trim(),
       whatsappNumber: (whatsappNumber || guardianPhone).trim(),
       bioNotes: bioNotes.trim() || 'পরিবারসহ দ্বীনি অনুশাসন মেনে চলার চেষ্টা করি।',
-      createdAt: Date.now(),
+      createdAt: initialData?.createdAt || Date.now(),
       isVerified: true,
       isCustomSubmission: true,
     };
 
-    onSave(newBiodata);
+    onSave(savedBiodata);
     onClose();
   };
 
@@ -118,10 +166,14 @@ export const MatrimonyBiodataFormModal: React.FC<MatrimonyBiodataFormModalProps>
             </div>
             <div>
               <h3 className="text-base font-bold text-white leading-tight">
-                দ্বীনি পাত্র/পাত্রীর বায়োডাটা জমা দিন
+                {initialData
+                  ? (lang === 'en' ? 'Edit Matrimonial Biodata' : lang === 'ur' ? 'شادی کا بائیوڈیٹا ترمیم کریں' : 'দ্বীনি পাত্র/পাত্রীর বায়োডাটা সম্পাদনা করুন')
+                  : (lang === 'en' ? 'Submit Matrimonial Biodata' : lang === 'ur' ? 'شادی کا بائیوڈیٹا جمع کروائیں' : 'দ্বীনি পাত্র/পাত্রীর বায়োডাটা জমা দিন')}
               </h3>
               <p className="text-[11px] text-emerald-300/80">
-                শরীয়াহসম্মত সুন্নতি বিবাহের জন্য আপনার বা আপনার সন্তানের তথ্য
+                {initialData
+                  ? (lang === 'en' ? 'Update your matrimonial profile details' : 'বায়োডাটার তথ্য পরিবর্তন ও আপডেট করুন')
+                  : (lang === 'en' ? 'Submit your biodata for Islamic marriage' : 'শরীয়াহসম্মত সুন্নতি বিবাহের জন্য আপনার বা আপনার সন্তানের তথ্য')}
               </p>
             </div>
           </div>
@@ -433,7 +485,11 @@ export const MatrimonyBiodataFormModal: React.FC<MatrimonyBiodataFormModalProps>
               className="w-full py-3 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-sm shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              <span>বায়োডাটা সংরক্ষণ করুন ও প্রকাশ করুন (+২০ কয়েন)</span>
+              <span>
+                {initialData
+                  ? (lang === 'en' ? 'Save & Update Profile' : lang === 'ur' ? 'معلومات محفوظ اور اپ ڈیٹ کریں' : 'বায়োডাটা আপডেট ও সংরক্ষণ করুন')
+                  : (lang === 'en' ? 'Save & Publish Biodata (+20 Coins)' : lang === 'ur' ? 'بائیوڈیٹا محفوظ اور شائع کریں' : 'বায়োডাটা সংরক্ষণ করুন ও প্রকাশ করুন (+২০ কয়েন)')}
+              </span>
             </button>
           </div>
         </form>

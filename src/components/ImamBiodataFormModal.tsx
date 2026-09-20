@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Sparkles, User, GraduationCap, MapPin, Phone, MessageCircle, Briefcase, IndianRupee, HeartHandshake } from 'lucide-react';
 import { ImamBiodata, AppLanguage } from '../types';
 
@@ -7,6 +7,7 @@ interface ImamBiodataFormModalProps {
   onClose: () => void;
   onSave: (biodata: ImamBiodata) => void;
   lang?: AppLanguage;
+  initialData?: ImamBiodata | null;
 }
 
 const COMMON_SKILLS = [
@@ -31,6 +32,8 @@ export const ImamBiodataFormModal: React.FC<ImamBiodataFormModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  lang = 'bn',
+  initialData = null,
 }) => {
   const [fullName, setFullName] = useState('');
   const [title, setTitle] = useState('হাফেজ ও মাওলানা');
@@ -55,6 +58,51 @@ export const ImamBiodataFormModal: React.FC<ImamBiodataFormModalProps> = ({
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [bioNotes, setBioNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (initialData) {
+      setFullName(initialData.fullName || '');
+      setTitle(initialData.title || 'হাফেজ ও মাওলানা');
+      setAge(String(initialData.age || 28));
+      setMaritalStatus(initialData.maritalStatus || 'বিবাহিত');
+      setQualification(initialData.qualification || '');
+      setInstitution(initialData.institution || 'কওমী / আলিয়া মাদ্রাসা');
+      setExperienceYears(String(initialData.experienceYears || 0));
+      setCurrentLocation(initialData.currentLocation || '');
+      setPreferredLocation(initialData.preferredLocation || '');
+      setExpectedSalary(String(initialData.expectedSalary || 12000));
+      setSelectedSkills(initialData.skills || ['৫ ওয়াক্ত ফরজ নামাজের সহীহ ইমামতি']);
+      setSelectedFacilities(initialData.facilitiesDemanded || ['পৃথক থাকার ঘর (একক কামরা)', 'খাবার সুব্যবস্থা']);
+      setContactPhone(initialData.contactPhone || '');
+      setWhatsappNumber(initialData.whatsappNumber || '');
+      setBioNotes(initialData.bioNotes || '');
+      setErrorMsg('');
+    } else if (isOpen) {
+      setFullName('');
+      setTitle('হাফেজ ও মাওলানা');
+      setAge('28');
+      setMaritalStatus('বিবাহিত');
+      setQualification('');
+      setInstitution('');
+      setExperienceYears('3');
+      setCurrentLocation('');
+      setPreferredLocation('');
+      setExpectedSalary('12000');
+      setSelectedSkills([
+        '৫ ওয়াক্ত ফরজ নামাজের সহীহ ইমামতি',
+        'জুমআর আকর্ষণীয় খুতবা ও বয়ান',
+        'শিশুদের নূরানী কায়দা ও নাজেরা পাঠদান',
+      ]);
+      setSelectedFacilities([
+        'পৃথক থাকার ঘর (একক কামরা)',
+        'খাবার সুব্যবস্থা',
+      ]);
+      setContactPhone('');
+      setWhatsappNumber('');
+      setBioNotes('');
+      setErrorMsg('');
+    }
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -92,8 +140,8 @@ export const ImamBiodataFormModal: React.FC<ImamBiodataFormModalProps> = ({
     const phoneFinal = contactPhone.trim() || whatsappNumber.trim();
     const waFinal = whatsappNumber.trim() || phoneFinal;
 
-    const newBiodata: ImamBiodata = {
-      id: 'imam-' + Date.now(),
+    const savedBiodata: ImamBiodata = {
+      id: initialData?.id || 'imam-' + Date.now(),
       fullName: fullName.trim(),
       title: title.trim() || 'হাফেজ ও মাওলানা',
       age: parseInt(age, 10) || 28,
@@ -109,12 +157,12 @@ export const ImamBiodataFormModal: React.FC<ImamBiodataFormModalProps> = ({
       contactPhone: phoneFinal,
       whatsappNumber: waFinal,
       bioNotes: bioNotes.trim(),
-      createdAt: Date.now(),
+      createdAt: initialData?.createdAt || Date.now(),
       isVerified: true,
       isCustomSubmission: true,
     };
 
-    onSave(newBiodata);
+    onSave(savedBiodata);
     onClose();
   };
 
@@ -129,10 +177,14 @@ export const ImamBiodataFormModal: React.FC<ImamBiodataFormModalProps> = ({
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white">
-                ইমাম সাহেবের বায়োডাটা যোগ করুন
+                {initialData
+                  ? (lang === 'en' ? 'Edit Imam Biodata' : lang === 'ur' ? 'امام بائیوڈیٹا ترمیم کریں' : 'ইমাম সাহেবের বায়োডাটা সম্পাদনা করুন')
+                  : (lang === 'en' ? 'Add Imam Biodata' : lang === 'ur' ? 'امام بائیوڈیٹا شامل کریں' : 'ইমাম সাহেবের বায়োডাটা যোগ করুন')}
               </h3>
               <p className="text-xs text-emerald-300/80">
-                মসজিদ কমিটি যেন আপনার সাথে সরাসরি যোগাযোগ করে নিয়োগ দিতে পারে
+                {initialData
+                  ? (lang === 'en' ? 'Update your qualifications, skills and demands' : 'আপনার শিক্ষাগত যোগ্যতা ও অভিজ্ঞতার তথ্য আপডেট করুন')
+                  : (lang === 'en' ? 'Let mosque committees directly reach you for appointment' : 'মসজিদ কমিটি যেন আপনার সাথে সরাসরি যোগাযোগ করে নিয়োগ দিতে পারে')}
               </p>
             </div>
           </div>
@@ -438,14 +490,18 @@ export const ImamBiodataFormModal: React.FC<ImamBiodataFormModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 rounded-xl bg-emerald-950 hover:bg-emerald-900 text-emerald-300 font-semibold transition-colors"
             >
-              বাতিল
+              {lang === 'en' ? 'Cancel' : lang === 'ur' ? 'منسوخ' : 'বাতিল'}
             </button>
             <button
               type="submit"
               className="px-5 py-2.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold shadow-md transition-all active:scale-95 flex items-center gap-1.5"
             >
               <Sparkles className="w-4 h-4" />
-              <span>বায়োডাটা প্রকাশ করুন</span>
+              <span>
+                {initialData
+                  ? (lang === 'en' ? 'Update Biodata' : lang === 'ur' ? 'بائیوڈیٹا اپ ڈیٹ کریں' : 'বায়োডাটা আপডেট করুন')
+                  : (lang === 'en' ? 'Publish Biodata' : lang === 'ur' ? 'بائیوڈیٹا شائع کریں' : 'বায়োডাটা প্রকাশ করুন')}
+              </span>
             </button>
           </div>
         </form>

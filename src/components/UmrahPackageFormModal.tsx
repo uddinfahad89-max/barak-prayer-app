@@ -468,7 +468,7 @@ export const UmrahPackageFormModal: React.FC<UmrahPackageFormModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {COMMON_INCLUSIONS.map((inc) => {
+              {(COMMON_INCLUSIONS[lang as 'bn' | 'en'] || COMMON_INCLUSIONS.bn).map((inc) => {
                 const isChecked = selectedInclusions.includes(inc);
                 return (
                   <button

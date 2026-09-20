@@ -13,6 +13,7 @@ import {
   ChevronRight,
   GraduationCap,
   Trash2,
+  Edit3,
   CheckCircle2,
   SlidersHorizontal,
   Share2,
@@ -88,6 +89,8 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
   // Modals state
   const [isImamFormOpen, setIsImamFormOpen] = useState(false);
   const [isMosqueFormOpen, setIsMosqueFormOpen] = useState(false);
+  const [editingImam, setEditingImam] = useState<ImamBiodata | null>(null);
+  const [editingVacancy, setEditingVacancy] = useState<MosqueVacancy | null>(null);
   const [selectedImamDetail, setSelectedImamDetail] = useState<ImamBiodata | null>(null);
   const [selectedVacancyDetail, setSelectedVacancyDetail] = useState<MosqueVacancy | null>(null);
   const [toastMsg, setToastMsg] = useState('');
@@ -104,16 +107,46 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
     setTimeout(() => setToastMsg(''), 3500);
   };
 
-  const handleAddImam = (newImam: ImamBiodata) => {
-    setImams((prev) => [newImam, ...prev]);
-    if (onAddCoin) onAddCoin(20);
-    showToast('মাশাআল্লাহ! আপনার বায়োডাটা সফলভাবে যুক্ত হয়েছে। (+২০ কয়েন)');
+  const handleSaveImam = (savedImam: ImamBiodata) => {
+    setImams((prev) => {
+      const exists = prev.some((item) => item.id === savedImam.id);
+      if (exists) {
+        return prev.map((item) => (item.id === savedImam.id ? savedImam : item));
+      }
+      return [savedImam, ...prev];
+    });
+    if (selectedImamDetail && selectedImamDetail.id === savedImam.id) {
+      setSelectedImamDetail(savedImam);
+    }
+    const isEditing = !!editingImam;
+    setEditingImam(null);
+    if (!isEditing && onAddCoin) onAddCoin(20);
+    showToast(
+      isEditing
+        ? (lang === 'en' ? 'Biodata updated successfully!' : 'ইমাম সাহেবের বায়োডাটা সফলভাবে আপডেট করা হয়েছে।')
+        : (lang === 'en' ? 'Biodata published successfully! (+20 Coins)' : 'মাশাআল্লাহ! আপনার বায়োডাটা সফলভাবে যুক্ত হয়েছে। (+২০ কয়েন)')
+    );
   };
 
-  const handleAddVacancy = (newVac: MosqueVacancy) => {
-    setVacancies((prev) => [newVac, ...prev]);
-    if (onAddCoin) onAddCoin(20);
-    showToast('আলহামদুলিল্লাহ! মসজিদের নিয়োগ বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে। (+২০ কয়েন)');
+  const handleSaveVacancy = (savedVac: MosqueVacancy) => {
+    setVacancies((prev) => {
+      const exists = prev.some((item) => item.id === savedVac.id);
+      if (exists) {
+        return prev.map((item) => (item.id === savedVac.id ? savedVac : item));
+      }
+      return [savedVac, ...prev];
+    });
+    if (selectedVacancyDetail && selectedVacancyDetail.id === savedVac.id) {
+      setSelectedVacancyDetail(savedVac);
+    }
+    const isEditing = !!editingVacancy;
+    setEditingVacancy(null);
+    if (!isEditing && onAddCoin) onAddCoin(20);
+    showToast(
+      isEditing
+        ? (lang === 'en' ? 'Vacancy post updated successfully!' : 'নিয়োগ বিজ্ঞপ্তিটি সফলভাবে আপডেট করা হয়েছে।')
+        : (lang === 'en' ? 'Vacancy post published successfully! (+20 Coins)' : 'আলহামদুলিল্লাহ! মসজিদের নিয়োগ বিজ্ঞপ্তি সফলভাবে প্রকাশিত হয়েছে। (+২০ কয়েন)')
+    );
   };
 
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'imam' | 'vacancy'; id: string; title: string } | null>(null);
@@ -122,9 +155,15 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
     if (!deleteTarget) return;
     if (deleteTarget.type === 'imam') {
       setImams((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      if (selectedImamDetail && selectedImamDetail.id === deleteTarget.id) {
+        setSelectedImamDetail(null);
+      }
       showToast(lang === 'en' ? 'Biodata deleted successfully.' : 'বায়োডাটা মুছে ফেলা হয়েছে।');
     } else {
       setVacancies((prev) => prev.filter((item) => item.id !== deleteTarget.id));
+      if (selectedVacancyDetail && selectedVacancyDetail.id === deleteTarget.id) {
+        setSelectedVacancyDetail(null);
+      }
       showToast(lang === 'en' ? 'Vacancy post deleted successfully.' : 'বিজ্ঞপ্তিটি মুছে ফেলা হয়েছে।');
     }
     setDeleteTarget(null);
@@ -388,16 +427,28 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
                         </span>
 
                         {vac.isCustomSubmission && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget({ type: 'vacancy', id: vac.id, title: vac.mosqueName });
-                            }}
-                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
-                            title={lang === 'en' ? 'Delete post' : 'বিজ্ঞপ্তি মুছুন'}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                setEditingVacancy(vac);
+                                setIsMosqueFormOpen(true);
+                              }}
+                              className="px-2 py-0.5 rounded text-[10px] font-bold text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-0.5"
+                              title={lang === 'en' ? 'Edit post' : 'বিজ্ঞপ্তি এডিট'}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteTarget({ type: 'vacancy', id: vac.id, title: vac.mosqueName });
+                              }}
+                              className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
+                              title={lang === 'en' ? 'Delete post' : 'বিজ্ঞপ্তি মুছুন'}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -543,16 +594,28 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
                         </span>
 
                         {im.isCustomSubmission && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget({ type: 'imam', id: im.id, title: im.fullName });
-                            }}
-                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
-                            title={lang === 'en' ? 'Delete biodata' : 'বায়োডাটা মুছুন'}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                setEditingImam(im);
+                                setIsImamFormOpen(true);
+                              }}
+                              className="px-2 py-0.5 rounded text-[10px] font-bold text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-0.5"
+                              title={lang === 'en' ? 'Edit biodata' : 'বায়োডাটা এডিট'}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                              <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDeleteTarget({ type: 'imam', id: im.id, title: im.fullName });
+                              }}
+                              className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
+                              title={lang === 'en' ? 'Delete biodata' : 'বায়োডাটা মুছুন'}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -706,16 +769,24 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
       {/* Sub-Modals: Form for Imam, Form for Mosque, Detail for Imam, Detail for Mosque */}
       <ImamBiodataFormModal
         isOpen={isImamFormOpen}
-        onClose={() => setIsImamFormOpen(false)}
-        onSave={handleAddImam}
+        onClose={() => {
+          setIsImamFormOpen(false);
+          setEditingImam(null);
+        }}
+        onSave={handleSaveImam}
         lang={lang}
+        initialData={editingImam}
       />
 
       <MosqueVacancyFormModal
         isOpen={isMosqueFormOpen}
-        onClose={() => setIsMosqueFormOpen(false)}
-        onSave={handleAddVacancy}
+        onClose={() => {
+          setIsMosqueFormOpen(false);
+          setEditingVacancy(null);
+        }}
+        onSave={handleSaveVacancy}
         lang={lang}
+        initialData={editingVacancy}
       />
 
       <ImamBiodataDetailModal
@@ -723,6 +794,13 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
         onClose={() => setSelectedImamDetail(null)}
         biodata={selectedImamDetail}
         lang={lang}
+        onEdit={(biodata) => {
+          setEditingImam(biodata);
+          setIsImamFormOpen(true);
+        }}
+        onDelete={(biodata) => {
+          setDeleteTarget({ type: 'imam', id: biodata.id, title: biodata.fullName });
+        }}
       />
 
       <MosqueVacancyDetailModal
@@ -730,6 +808,13 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
         onClose={() => setSelectedVacancyDetail(null)}
         vacancy={selectedVacancyDetail}
         lang={lang}
+        onEdit={(vac) => {
+          setEditingVacancy(vac);
+          setIsMosqueFormOpen(true);
+        }}
+        onDelete={(vac) => {
+          setDeleteTarget({ type: 'vacancy', id: vac.id, title: vac.mosqueName });
+        }}
       />
     </div>
   );

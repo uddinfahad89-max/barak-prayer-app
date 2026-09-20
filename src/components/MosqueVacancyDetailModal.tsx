@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   Briefcase,
   UserCheck,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import { MosqueVacancy, AppLanguage } from '../types';
 import { getMosqueDisplay } from '../utils/portalTranslations';
@@ -18,6 +20,8 @@ interface MosqueVacancyDetailModalProps {
   onClose: () => void;
   vacancy: MosqueVacancy | null;
   lang?: AppLanguage;
+  onEdit?: (vacancy: MosqueVacancy) => void;
+  onDelete?: (vacancy: MosqueVacancy) => void;
 }
 
 export const MosqueVacancyDetailModal: React.FC<MosqueVacancyDetailModalProps> = ({
@@ -25,6 +29,8 @@ export const MosqueVacancyDetailModal: React.FC<MosqueVacancyDetailModalProps> =
   onClose,
   vacancy,
   lang = 'bn',
+  onEdit,
+  onDelete,
 }) => {
   if (!isOpen || !vacancy) return null;
 
@@ -76,12 +82,36 @@ export const MosqueVacancyDetailModal: React.FC<MosqueVacancyDetailModalProps> =
               </h3>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/50 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {vacancy.isCustomSubmission && onEdit && (
+              <button
+                onClick={() => onEdit(vacancy)}
+                className="px-2.5 py-1.5 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] font-bold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
+                title={lang === 'en' ? 'Edit Vacancy' : 'বিজ্ঞপ্তি এডিট করুন'}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
+              </button>
+            )}
+
+            {vacancy.isCustomSubmission && onDelete && (
+              <button
+                onClick={() => onDelete(vacancy)}
+                className="px-2.5 py-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/50 font-semibold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
+                title={lang === 'en' ? 'Delete Vacancy' : 'বিজ্ঞপ্তি মুছে ফেলুন'}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Delete' : 'মুছুন'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/50 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
