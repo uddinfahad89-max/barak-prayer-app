@@ -426,30 +426,28 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
                           {vac.position}
                         </span>
 
-                        {vac.isCustomSubmission && (
-                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => {
-                                setEditingVacancy(vac);
-                                setIsMosqueFormOpen(true);
-                              }}
-                              className="px-2 py-0.5 rounded text-[10px] font-bold text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-0.5"
-                              title={lang === 'en' ? 'Edit post' : 'বিজ্ঞপ্তি এডিট'}
-                            >
-                              <Edit3 className="w-3 h-3" />
-                              <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDeleteTarget({ type: 'vacancy', id: vac.id, title: vac.mosqueName });
-                              }}
-                              className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
-                              title={lang === 'en' ? 'Delete post' : 'বিজ্ঞপ্তি মুছুন'}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => {
+                              setEditingVacancy(vac);
+                              setIsMosqueFormOpen(true);
+                            }}
+                            className="px-2 py-0.5 rounded text-[10px] font-bold text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-0.5"
+                            title={lang === 'en' ? 'Edit post' : 'বিজ্ঞপ্তি এডিট'}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({ type: 'vacancy', id: vac.id, title: vac.mosqueName });
+                            }}
+                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
+                            title={lang === 'en' ? 'Delete post' : 'বিজ্ঞপ্তি মুছুন'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -593,30 +591,28 @@ export const ImamPortalModal: React.FC<ImamPortalModalProps> = ({
                           {im.title}
                         </span>
 
-                        {im.isCustomSubmission && (
-                          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => {
-                                setEditingImam(im);
-                                setIsImamFormOpen(true);
-                              }}
-                              className="px-2 py-0.5 rounded text-[10px] font-bold text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-0.5"
-                              title={lang === 'en' ? 'Edit biodata' : 'বায়োডাটা এডিট'}
-                            >
-                              <Edit3 className="w-3 h-3" />
-                              <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setDeleteTarget({ type: 'imam', id: im.id, title: im.fullName });
-                              }}
-                              className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
-                              title={lang === 'en' ? 'Delete biodata' : 'বায়োডাটা মুছুন'}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => {
+                              setEditingImam(im);
+                              setIsImamFormOpen(true);
+                            }}
+                            className="px-2 py-0.5 rounded text-[10px] font-bold text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-0.5"
+                            title={lang === 'en' ? 'Edit biodata' : 'বায়োডাটা এডিট'}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>{lang === 'en' ? 'Edit' : 'এডিট'}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteTarget({ type: 'imam', id: im.id, title: im.fullName });
+                            }}
+                            className="p-1 rounded text-rose-400 hover:text-rose-200 hover:bg-rose-900/40 transition-colors cursor-pointer"
+                            title={lang === 'en' ? 'Delete biodata' : 'বায়োডাটা মুছুন'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 

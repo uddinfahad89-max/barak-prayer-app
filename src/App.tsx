@@ -375,14 +375,7 @@ export default function App() {
               const textMatch = matchConstituencyByAddressText(addressObj);
               if (textMatch) {
                 setSelectedLocationId(textMatch.id);
-                const constName = lang === 'en' ? textMatch.name : textMatch.nameBn;
-                setLocationStatusMsg(
-                  lang === 'en'
-                    ? `Detected: ${city || constName} (${constName} • Authentic Time)`
-                    : lang === 'ur'
-                    ? `شناخت شدہ: ${city || constName} (${textMatch.name} • اصل وقت)`
-                    : `শনাক্তকৃত: ${city} (${constName} বিধানসভা • আসল সময়)`
-                );
+                setLocationStatusMsg('');
                 return;
               }
             }
@@ -671,6 +664,7 @@ export default function App() {
   };
 
   const nextPrayerNameStr = nextPrayer?.key ? (prayerNameMap[nextPrayer.key] || 'Fajr') : 'Fajr';
+  const currentPrayerNameStr = currentPrayer?.key ? (prayerNameMap[currentPrayer.key] || '') : '';
   const nextPrayerTimeStr = nextPrayer?.adjustedTime ? String(nextPrayer.adjustedTime).toLowerCase() : '4:08 am';
 
   return (
@@ -688,9 +682,12 @@ export default function App() {
         hijriDateFormattedEn={hijriData.formattedEn}
         hijriDateFormattedBn={hijriData.formattedBn}
         nextPrayerName={nextPrayerNameStr}
+        currentPrayerName={currentPrayerNameStr}
         nextPrayerTime={nextPrayerTimeStr}
         sunriseTime={sunriseTimeStr}
         minutesToNext={minutesToNext}
+        mosqueName={mosqueName}
+        jamaatTimes={jamaatTimes}
         onOpenMosqueSettings={() => setIsMosqueModalOpen(true)}
         lang={appLang}
         onSelectLang={handleSelectLang}

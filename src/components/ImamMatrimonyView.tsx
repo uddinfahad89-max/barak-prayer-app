@@ -800,30 +800,28 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         </div>
                       </div>
 
-                      {mat.isCustomSubmission && (
-                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => {
-                              setEditingMatrimony(mat);
-                              setIsMatrimonyFormOpen(true);
-                            }}
-                            className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
-                            title={lang === 'en' ? 'Edit Biodata' : 'বায়োডাটা এডিট'}
-                          >
-                            <Edit3 className="w-3 h-3" />
-                            <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteTarget({ type: 'matrimony', id: mat.id, title: dMat.fullName });
-                            }}
-                            className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
-                            title={lang === 'en' ? 'Delete' : 'মুছুন'}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            setEditingMatrimony(mat);
+                            setIsMatrimonyFormOpen(true);
+                          }}
+                          className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                          title={lang === 'en' ? 'Edit Biodata' : 'বায়োডাটা এডিট'}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteTarget({ type: 'matrimony', id: mat.id, title: dMat.fullName });
+                          }}
+                          className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
+                          title={lang === 'en' ? 'Delete' : 'মুছুন'}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Quick Specs Pill */}
@@ -1006,30 +1004,28 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         </div>
                       </div>
 
-                      {v.isCustomSubmission && (
-                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => {
-                              setEditingVacancy(v);
-                              setIsMosqueFormOpen(true);
-                            }}
-                            className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
-                            title={lang === 'en' ? 'Edit Vacancy' : 'বিজ্ঞপ্তি এডিট'}
-                          >
-                            <Edit3 className="w-3 h-3" />
-                            <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteTarget({ type: 'vacancy', id: v.id, title: dMosque.mosqueName });
-                            }}
-                            className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
-                            title={lang === 'en' ? 'Delete' : 'মুছুন'}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            setEditingVacancy(v);
+                            setIsMosqueFormOpen(true);
+                          }}
+                          className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                          title={lang === 'en' ? 'Edit Vacancy' : 'বিজ্ঞপ্তি এডিট'}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteTarget({ type: 'vacancy', id: v.id, title: dMosque.mosqueName });
+                          }}
+                          className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
+                          title={lang === 'en' ? 'Delete' : 'মুছুন'}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="p-2.5 bg-[#03221F] rounded-xl border border-emerald-800/50 flex items-center justify-between">
@@ -1187,30 +1183,28 @@ export const ImamMatrimonyView: React.FC<ImamMatrimonyViewProps> = ({
                         </div>
                       </div>
 
-                      {im.isCustomSubmission && (
-                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => {
-                              setEditingImam(im);
-                              setIsImamFormOpen(true);
-                            }}
-                            className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
-                            title={lang === 'en' ? 'Edit Biodata' : 'বায়োডাটা এডিট'}
-                          >
-                            <Edit3 className="w-3 h-3" />
-                            <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setDeleteTarget({ type: 'imam', id: im.id, title: dImam.fullName });
-                            }}
-                            className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
-                            title={lang === 'en' ? 'Delete' : 'মুছুন'}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => {
+                            setEditingImam(im);
+                            setIsImamFormOpen(true);
+                          }}
+                          className="px-2 py-1 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold shadow-2xs"
+                          title={lang === 'en' ? 'Edit Biodata' : 'বায়োডাটা এডিট'}
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>{lang === 'en' ? 'Edit' : lang === 'ur' ? 'ترمیم' : 'এডিট'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setDeleteTarget({ type: 'imam', id: im.id, title: dImam.fullName });
+                          }}
+                          className="p-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/40 transition-colors cursor-pointer"
+                          title={lang === 'en' ? 'Delete' : 'মুছুন'}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="p-2.5 bg-[#03221F] rounded-xl border border-emerald-800/50 flex items-center justify-between">

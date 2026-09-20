@@ -97,8 +97,8 @@ export const MatrimonyBiodataDetailModal: React.FC<MatrimonyBiodataDetailModalPr
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {biodata.isCustomSubmission && onEdit && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onEdit && (
               <button
                 onClick={() => onEdit(biodata)}
                 className="px-2.5 py-1.5 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] font-bold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
@@ -109,7 +109,7 @@ export const MatrimonyBiodataDetailModal: React.FC<MatrimonyBiodataDetailModalPr
               </button>
             )}
 
-            {biodata.isCustomSubmission && onDelete && (
+            {onDelete && (
               <button
                 onClick={() => onDelete(biodata)}
                 className="px-2.5 py-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/50 font-semibold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
@@ -122,7 +122,7 @@ export const MatrimonyBiodataDetailModal: React.FC<MatrimonyBiodataDetailModalPr
 
             <button
               onClick={handleShare}
-              className="p-2 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/60 transition-colors"
+              className="p-2 rounded-lg text-emerald-300 hover:text-white hover:bg-emerald-800/60 transition-colors cursor-pointer"
               title={lang === 'en' ? 'Share' : 'শেয়ার করুন'}
             >
               <Share2 className="w-4 h-4" />
@@ -284,15 +284,30 @@ export const MatrimonyBiodataDetailModal: React.FC<MatrimonyBiodataDetailModalPr
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 bg-[#09332E] border-t border-emerald-800/80 flex items-center justify-between">
-          <span className="text-[10px] text-emerald-400/80">
-            {lang === 'en'
-              ? '🔒 Please communicate with family only, observing Islamic modesty & values'
-              : '🔒 দ্বীনি ও শরীয়াহ রক্ষা করে শুধুমাত্র পরিবারের সাথে যোগাযোগ করুন'}
-          </span>
+        <div className="px-5 py-3 bg-[#09332E] border-t border-emerald-800/80 flex items-center justify-between flex-wrap gap-2.5">
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(biodata)}
+                className="px-3 py-1.5 rounded-xl bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Edit Profile' : lang === 'ur' ? 'ترمیم کریں' : 'এডিট করুন'}</span>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(biodata)}
+                className="px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-700/50 text-rose-300 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Delete Profile' : lang === 'ur' ? 'حذف کریں' : 'মুছে ফেলুন'}</span>
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-white font-semibold text-xs transition-colors cursor-pointer ml-auto"
           >
             {lang === 'en' ? 'Close' : 'বন্ধ করুন'}
           </button>

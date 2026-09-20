@@ -82,8 +82,8 @@ export const MosqueVacancyDetailModal: React.FC<MosqueVacancyDetailModalProps> =
               </h3>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            {vacancy.isCustomSubmission && onEdit && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            {onEdit && (
               <button
                 onClick={() => onEdit(vacancy)}
                 className="px-2.5 py-1.5 rounded-lg text-[#03221F] bg-[#E2A336] hover:bg-[#c98e2a] font-bold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
@@ -94,7 +94,7 @@ export const MosqueVacancyDetailModal: React.FC<MosqueVacancyDetailModalProps> =
               </button>
             )}
 
-            {vacancy.isCustomSubmission && onDelete && (
+            {onDelete && (
               <button
                 onClick={() => onDelete(vacancy)}
                 className="px-2.5 py-1.5 rounded-lg text-rose-300 bg-rose-950/80 hover:bg-rose-900 border border-rose-700/50 font-semibold transition-all flex items-center gap-1 text-xs cursor-pointer shadow-xs"
@@ -235,18 +235,40 @@ export const MosqueVacancyDetailModal: React.FC<MosqueVacancyDetailModalProps> =
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 bg-[#09332E] border-t border-emerald-800/60 flex items-center justify-between text-xs">
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 font-semibold transition-colors cursor-pointer"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>{lang === 'en' ? 'Share Notice' : 'বিজ্ঞপ্তি শেয়ার করুন'}</span>
-          </button>
+        <div className="px-5 py-3 bg-[#09332E] border-t border-emerald-800/60 flex items-center justify-between text-xs flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(vacancy)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E2A336] hover:bg-[#c98e2a] text-[#03221F] font-bold transition-colors cursor-pointer"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Edit Vacancy' : 'বিজ্ঞপ্তি এডিট'}</span>
+              </button>
+            )}
+
+            {onDelete && (
+              <button
+                onClick={() => onDelete(vacancy)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 border border-rose-700/50 text-rose-300 font-semibold transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Delete' : 'মুছে ফেলুন'}</span>
+              </button>
+            )}
+
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 font-semibold transition-colors cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{lang === 'en' ? 'Share' : 'শেয়ার'}</span>
+            </button>
+          </div>
 
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white font-semibold transition-colors cursor-pointer"
+            className="px-4 py-1.5 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white font-semibold transition-colors cursor-pointer ml-auto"
           >
             {lang === 'en' ? 'Close' : 'বন্ধ করুন'}
           </button>

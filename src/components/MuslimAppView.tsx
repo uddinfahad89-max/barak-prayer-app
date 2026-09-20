@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   User,
   Coins,
@@ -55,6 +55,7 @@ interface MuslimAppViewProps {
   hijriDateFormattedBn: string;
   // Prayer Times
   nextPrayerName: string;
+  currentPrayerName?: string;
   nextPrayerTime: string;
   sunriseTime: string;
   minutesToNext: number;
@@ -83,6 +84,7 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
   hijriDateFormattedEn,
   hijriDateFormattedBn,
   nextPrayerName,
+  currentPrayerName = '',
   nextPrayerTime,
   sunriseTime,
   minutesToNext,
@@ -173,6 +175,105 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
   );
 
   const nextJamaatTime = (jamaatTimes && nextPrayerName && jamaatTimes[nextPrayerName]) || '';
+
+  // Helper to convert time string (HH:MM or 12h) to minutes from midnight
+  const parseTimeToMins = (t?: string): number | null => {
+    if (!t) return null;
+    const str = t.trim().toLowerCase();
+    const isPm = str.includes('pm');
+    const isAm = str.includes('am');
+    const clean = str.replace(/[apm\s]/g, '');
+    const [hStr, mStr] = clean.split(':');
+    let h = parseInt(hStr, 10);
+    const m = parseInt(mStr, 10) || 0;
+    if (isNaN(h)) return null;
+    if (isPm && h < 12) h += 12;
+    if (isAm && h === 12) h = 0;
+    return h * 60 + m;
+  };
+
+  // Determine which Jamaat time to highlight right in the main card's red circle spot
+  const activeJamaat = useMemo(() => {
+    if (!jamaatTimes) return null;
+
+    const prayerDefs = [
+      { key: 'Fajr', labelEn: 'Fajr', labelBn: 'ফজর', labelUr: 'فجر' },
+      { key: 'Dhuhr', labelEn: 'Dhuhr', labelBn: 'যোহর', labelUr: 'ظہر' },
+      { key: 'Asr', labelEn: 'Asr', labelBn: 'আসর', labelUr: 'عصر' },
+      { key: 'Maghrib', labelEn: 'Maghrib', labelBn: 'মাগরিব', labelUr: 'مغرب' },
+      { key: 'Isha', labelEn: 'Isha', labelBn: 'এশা', labelUr: 'عشاء' },
+    ];
+
+    const getLabel = (k: string) => {
+      const found = prayerDefs.find((p) => p.key.toLowerCase() === k.toLowerCase());
+      if (!found) return k;
+      return lang === 'en' ? found.labelEn : lang === 'ur' ? found.labelUr : found.labelBn;
+    };
+
+    // Current clock minutes
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    // 1. If currently in a prayer waqt (e.g. Dhuhr) and its jamaat time hasn't passed more than 20 mins ago
+    if (currentPrayerName && jamaatTimes[currentPrayerName]) {
+      const raw = jamaatTimes[currentPrayerName];
+      if (raw && raw.trim().length > 0) {
+        const mins = parseTimeToMins(raw);
+        if (mins !== null && currentMins <= mins + 20) {
+          return {
+            key: currentPrayerName,
+            label: getLabel(currentPrayerName),
+            time: raw,
+            isImminent: true,
+          };
+        }
+      }
+    }
+
+    // 2. Next prayer's jamaat time if configured
+    if (nextPrayerName && jamaatTimes[nextPrayerName]) {
+      const raw = jamaatTimes[nextPrayerName];
+      if (raw && raw.trim().length > 0) {
+        return {
+          key: nextPrayerName,
+          label: getLabel(nextPrayerName),
+          time: raw,
+          isImminent: false,
+        };
+      }
+    }
+
+    // 3. Find nearest upcoming jamaat from any configured prayer
+    for (const p of prayerDefs) {
+      const raw = jamaatTimes[p.key];
+      if (raw && raw.trim().length > 0) {
+        const mins = parseTimeToMins(raw);
+        if (mins !== null && mins >= currentMins) {
+          return {
+            key: p.key,
+            label: getLabel(p.key),
+            time: raw,
+            isImminent: false,
+          };
+        }
+      }
+    }
+
+    // 4. First configured prayer of the day (e.g. tomorrow's Fajr)
+    for (const p of prayerDefs) {
+      const raw = jamaatTimes[p.key];
+      if (raw && raw.trim().length > 0) {
+        return {
+          key: p.key,
+          label: getLabel(p.key),
+          time: raw,
+          isImminent: false,
+        };
+      }
+    }
+
+    return null;
+  }, [jamaatTimes, currentPrayerName, nextPrayerName, lang]);
 
   const remainingHours = Math.floor(minutesToNext / 60);
   const remainingMins = minutesToNext % 60;
@@ -280,16 +381,6 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
               </div>
             </header>
 
-            {/* 2. Premium Status Bar */}
-            <button
-              onClick={() => setIsNotificationInfoOpen(true)}
-              className="w-full bg-[#09332E] border border-[#E2A336]/50 rounded-full px-4 py-2.5 sm:py-3 flex items-center justify-between text-left text-xs sm:text-sm hover:bg-[#0C3E37] transition-all shadow-sm group"
-            >
-              <span className="text-stone-200 group-hover:text-white font-medium">
-                {t.premiumEnds}
-              </span>
-              <ArrowRight className={`w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform ${lang === 'ur' ? 'rotate-180 group-hover:-translate-x-0.5' : ''}`} />
-            </button>
 
             {/* 3. Prayer Times Main Card (HIGHLIGHTED IN RED IN USER'S SCREENSHOT) */}
             <div
@@ -338,41 +429,72 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                 </div>
               </div>
 
-              {/* Main Prayer Time (Big Typography) */}
-              <div className="mt-3 mb-1">
-                <div className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
-                  {nextPrayerTime}
-                </div>
-                <div className="text-xs sm:text-sm text-[#90A8A3] mt-1 font-medium flex items-center gap-2 flex-wrap">
-                  <span>{t.sunriseAt} {sunriseTime}</span>
-                  {minutesToNext > 0 && (
-                    <span className="text-emerald-400 font-normal">
-                      {remainingTimeStr}
-                    </span>
-                  )}
+              {/* Main Prayer Time & Mosque Jamaat Row (RED CIRCLE SPOT FROM SCREENSHOT) */}
+              <div className="mt-3 mb-1 flex items-center justify-between gap-3">
+                {/* Left Column: Big Prayer Waqt Time & countdown */}
+                <div className="min-w-0 flex-1">
+                  <div className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+                    {nextPrayerTime}
+                  </div>
+                  <div className="text-xs sm:text-sm text-[#90A8A3] mt-1 font-medium flex items-center gap-1.5 flex-wrap">
+                    <span>{t.sunriseAt} {sunriseTime}</span>
+                    {minutesToNext > 0 && (
+                      <span className="text-emerald-400 font-normal">
+                        {remainingTimeStr}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Local Mosque Congregation Time pill if configured */}
-                {nextJamaatTime && (
-                  <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#E2A336]/15 border border-[#E2A336]/30 text-[#E2A336] text-xs font-semibold">
-                    <Building2 className="w-3.5 h-3.5 shrink-0 text-[#E2A336]" />
-                    <span className="text-emerald-200/90 font-medium">
-                      {lang === 'en' ? 'Mosque Jamaat:' : lang === 'ur' ? 'مسجد میں جماعت:' : 'মসজিদে জামাত:'}
+                {/* Right Column: EXACT SPOT CIRCLED IN RED IN USER'S SCREENSHOT */}
+                {activeJamaat ? (
+                  <button
+                    id="main-card-active-jamaat-badge"
+                    onClick={onOpenMosqueSettings}
+                    className="shrink-0 p-2.5 sm:p-3 rounded-2xl bg-[#03221F] hover:bg-[#052d27] border border-[#E2A336]/60 hover:border-[#E2A336] shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all cursor-pointer flex flex-col items-end text-right min-w-[115px] sm:min-w-[135px] ring-1 ring-[#E2A336]/30 hover:ring-[#E2A336]/80 group/jcard"
+                    title={lang === 'bn' ? 'মসজিদের জামাত সময় পরিবর্তন করুন' : lang === 'ur' ? 'جماعت کا وقت تبدیل کریں' : 'Edit Mosque Jamaat Time'}
+                  >
+                    {/* Header Label: e.g. 🕌 যোহর জামাত */}
+                    <div className="flex items-center gap-1 text-[11px] font-bold text-[#E2A336]">
+                      <Building2 className="w-3.5 h-3.5 text-[#E2A336] shrink-0" />
+                      <span className="truncate max-w-[85px] sm:max-w-[100px]">
+                        {activeJamaat.label} {lang === 'en' ? 'Jamaat' : lang === 'ur' ? 'جماعت' : 'জামাত'}
+                      </span>
+                    </div>
+
+                    {/* Prominent Jamaat Time: e.g. 01:15 PM */}
+                    <div className="text-lg sm:text-2xl font-black text-white group-hover/jcard:text-[#E2A336] transition-colors tracking-tight mt-0.5 font-mono">
+                      {formatToIndian12Hour(activeJamaat.time)}
+                    </div>
+
+                    {/* Mosque Name or "আমার মসজিদ" with Edit Icon */}
+                    <div className="text-[9px] sm:text-[10px] text-emerald-300/80 font-medium flex items-center gap-1 mt-0.5">
+                      <span className="truncate max-w-[75px] sm:max-w-[90px]">
+                        {mosqueName || (lang === 'bn' ? 'আমার মসজিদ' : lang === 'ur' ? 'میری مسجد' : 'My Mosque')}
+                      </span>
+                      <Edit3 className="w-2.5 h-2.5 text-[#E2A336] opacity-70 group-hover/jcard:opacity-100 transition-opacity shrink-0" />
+                    </div>
+                  </button>
+                ) : (
+                  <button
+                    id="main-card-add-jamaat-prompt"
+                    onClick={onOpenMosqueSettings}
+                    className="shrink-0 p-2 sm:p-2.5 rounded-2xl bg-[#03221F]/70 hover:bg-[#03221F] border border-dashed border-[#E2A336]/50 hover:border-[#E2A336] shadow-md hover:shadow-lg transition-all cursor-pointer flex flex-col items-center justify-center text-center min-w-[105px] sm:min-w-[125px] group/add"
+                    title={lang === 'bn' ? 'মসজিদের জামাত সময় যোগ করুন' : lang === 'ur' ? 'مسجد کی جماعت شامل کریں' : 'Add Mosque Jamaat Time'}
+                  >
+                    <div className="w-7 h-7 rounded-full bg-[#E2A336]/20 flex items-center justify-center text-[#E2A336] group-hover/add:scale-110 transition-transform mb-0.5">
+                      <Building2 className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-[10px] sm:text-[11px] font-bold text-white group-hover/add:text-[#E2A336] leading-tight">
+                      {lang === 'en' ? 'Mosque Jamaat' : lang === 'ur' ? 'جماعت کا وقت' : 'মসজিদে জামাত'}
                     </span>
-                    <span className="text-white font-bold">
-                      {formatToIndian12Hour(nextJamaatTime)}
+                    <span className="text-[9px] font-semibold text-[#E2A336] mt-0.5 flex items-center gap-0.5">
+                      <Plus className="w-3 h-3" />
+                      {lang === 'en' ? 'Add Time' : lang === 'ur' ? 'وقت درج کریں' : 'টাইম দিন'}
                     </span>
-                  </div>
+                  </button>
                 )}
               </div>
-
-              {/* Location Status Message (if detecting or detected) */}
-              {locationStatusMsg && (
-                <div className="mt-2 text-[11px] text-amber-200/90 bg-black/20 px-2.5 py-1 rounded-lg border border-amber-500/20 flex items-center justify-between">
-                  <span>📍 {locationStatusMsg}</span>
-                  {isDetectingLocation && <RefreshCw className="w-3 h-3 animate-spin text-[#E2A336]" />}
-                </div>
-              )}
 
               {/* Bottom Action: View all prayer times */}
               <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
