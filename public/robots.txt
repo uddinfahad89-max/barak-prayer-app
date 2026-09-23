@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap Index for Google Search Console & Web Crawlers
+Sitemap: https://ais-pre-hdl2jhru33xvmotoowjuqh-558329364265.asia-southeast1.run.app/sitemap.xml

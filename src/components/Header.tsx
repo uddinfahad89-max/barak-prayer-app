@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon, Smartphone } from 'lucide-react';
+import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon, Smartphone, User, KeyRound } from 'lucide-react';
 import { LocationMeta, AppLanguage } from '../types';
 import { playPrayerChime } from '../utils/audioAlert';
 import { calculateHijriFromDate, toBengaliNumerals } from '../utils/hijriCalendar';
 import { TRANSLATIONS } from '../utils/translations';
+import { UserAccount, AuthMode } from '../types/auth';
 
 interface HeaderProps {
   locations: LocationMeta[];
@@ -32,6 +33,8 @@ interface HeaderProps {
   onOpenInstallHelp?: () => void;
   onOpenLocationPicker?: () => void;
   lang?: AppLanguage;
+  currentUser?: UserAccount | null;
+  onOpenAuth?: (mode?: AuthMode) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -61,6 +64,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenInstallHelp,
   onOpenLocationPicker,
   lang = 'en',
+  currentUser,
+  onOpenAuth,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const [districtFilter, setDistrictFilter] = useState<'all' | 'Cachar' | 'Hailakandi' | 'Karimganj'>('all');
@@ -222,6 +227,33 @@ export const Header: React.FC<HeaderProps> = ({
                   : `🇮🇳 ${selectedLoc.name}`}
               </span>
             </button>
+          )}
+
+          {/* User Auth (Email & mPIN Signup / Profile) */}
+          {onOpenAuth && (
+            currentUser ? (
+              <button
+                id="header-user-profile-btn"
+                onClick={() => onOpenAuth('profile')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/90 hover:bg-emerald-800 border border-emerald-700/60 text-xs font-semibold text-emerald-100 transition-colors cursor-pointer shadow-xs"
+                title={currentUser.name}
+              >
+                <div className="w-4 h-4 rounded-full bg-[#E2A336] text-[#03221F] font-bold text-[10px] flex items-center justify-center">
+                  {currentUser.name.charAt(0).toUpperCase()}
+                </div>
+                <span>{currentUser.name.split(' ')[0]}</span>
+              </button>
+            ) : (
+              <button
+                id="header-user-signup-btn"
+                onClick={() => onOpenAuth('signup')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#E2A336] to-amber-400 hover:brightness-105 text-[#03221F] text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+                title="ইমেইল ও mPIN দিয়ে সাইন আপ করুন"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>{lang === 'en' ? 'Sign Up (mPIN)' : lang === 'ur' ? 'سائن اپ (mPIN)' : 'সাইন আপ (mPIN)'}</span>
+              </button>
+            )
           )}
 
           {/* JSON Data & Configuration */}

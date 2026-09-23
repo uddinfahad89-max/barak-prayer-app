@@ -35,8 +35,21 @@ import { LocationPickerModal } from './components/LocationPickerModal';
 import { IndianTimePicker } from './components/IndianTimePicker';
 import { playPrayerChime, playAzan, stopAzan, setAzanEndCallback } from './utils/audioAlert';
 import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck, Smartphone, Volume2, Square, Heart } from 'lucide-react';
+import { UserAccount, AuthMode } from './types/auth';
+import { getCurrentUser } from './utils/authStorage';
+import { AuthModal } from './components/AuthModal';
 
 export default function App() {
+  // Authentication state
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<AuthMode>('signup');
+
+  const handleOpenAuth = (mode: AuthMode = 'signup') => {
+    setAuthModalMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
   // State for user data
   const [locationOffsets, setLocationOffsets] = useState<LocationOffsets>(DEFAULT_LOCATION_OFFSETS);
   const [timetable, setTimetable] = useState<TimetableData>(DEFAULT_TIMETABLE);
@@ -692,6 +705,8 @@ export default function App() {
         lang={appLang}
         onSelectLang={handleSelectLang}
         onOpenLocationPicker={() => setIsLocationPickerOpen(true)}
+        currentUser={currentUser}
+        onOpenAuth={handleOpenAuth}
         prayersChildren={
           <div className="space-y-6 pb-20">
             {/* Top Header */}
@@ -722,6 +737,9 @@ export default function App() {
               onOpenArabicCalendar={() => setActiveTab('arabic')}
               onOpenInstallHelp={() => setIsInstallHelpOpen(true)}
               onOpenLocationPicker={() => setIsLocationPickerOpen(true)}
+              lang={appLang}
+              currentUser={currentUser}
+              onOpenAuth={handleOpenAuth}
             />
 
             {/* Navigation View Switcher */}
@@ -1117,6 +1135,16 @@ export default function App() {
           </button>
         </div>
       )}
+
+      {/* User Signup & Login with Email and mPIN Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onUserChange={setCurrentUser}
+        initialMode={authModalMode}
+        lang={appLang}
+      />
     </>
   );
 }

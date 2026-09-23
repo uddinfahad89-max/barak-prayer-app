@@ -24,6 +24,8 @@ import {
   HeartHandshake,
   Edit3,
   Plus,
+  KeyRound,
+  X,
 } from 'lucide-react';
 import { QiblaModal } from './QiblaModal';
 import { TasbihModal } from './TasbihModal';
@@ -38,6 +40,7 @@ import { ImamPortalModal } from './ImamPortalModal';
 import { LocationMeta, AppLanguage } from '../types';
 import { TRANSLATIONS, getPrayerName } from '../utils/translations';
 import { formatToIndian12Hour } from '../utils/prayerCalc';
+import { UserAccount, AuthMode } from '../types/auth';
 
 interface MuslimAppViewProps {
   // Navigation & Location
@@ -69,6 +72,8 @@ interface MuslimAppViewProps {
   lang?: AppLanguage;
   onSelectLang?: (lang: AppLanguage) => void;
   onOpenLocationPicker?: () => void;
+  currentUser?: UserAccount | null;
+  onOpenAuth?: (mode?: AuthMode) => void;
 }
 
 export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
@@ -95,7 +100,12 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
   lang = 'en',
   onSelectLang,
   onOpenLocationPicker,
+  currentUser,
+  onOpenAuth,
 }) => {
+  // Signup banner dismissal state
+  const [dismissSignupBanner, setDismissSignupBanner] = useState<boolean>(false);
+
   // Coins state
   const [coins, setCoins] = useState<number>(() => {
     try {
@@ -298,13 +308,36 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
             <header className="flex items-center justify-between gap-2 pt-1 pb-2">
               {/* Profile Avatar & Hijri Date */}
               <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => setIsNotificationInfoOpen(true)}
-                  className="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition-colors shrink-0"
-                  aria-label="Profile"
-                >
-                  <User className="w-5 h-5" />
-                </button>
+                {currentUser ? (
+                  <button
+                    onClick={() => onOpenAuth ? onOpenAuth('profile') : setIsNotificationInfoOpen(true)}
+                    className="flex items-center gap-2 group cursor-pointer"
+                    title={currentUser.name}
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#E2A336] to-amber-200 border-2 border-emerald-400/80 flex items-center justify-center text-[#03221F] font-black text-sm shadow-md shrink-0">
+                      {currentUser.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="hidden sm:flex flex-col text-left">
+                      <span className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors leading-tight truncate max-w-[80px]">
+                        {currentUser.name.split(' ')[0]}
+                      </span>
+                      <span className="text-[10px] text-emerald-300">
+                        {lang === 'en' ? 'Profile' : 'প্রোফাইল'}
+                      </span>
+                    </div>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onOpenAuth ? onOpenAuth('signup') : setIsNotificationInfoOpen(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-[#E2A336] to-amber-400 text-[#03221F] font-bold text-xs shadow-md hover:brightness-105 active:scale-95 transition-all shrink-0 cursor-pointer"
+                    title={lang === 'en' ? 'Sign Up with Email & mPIN' : 'ইমেইল ও mPIN দিয়ে সাইন আপ করুন'}
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold">
+                      {lang === 'en' ? 'Sign Up' : lang === 'ur' ? 'سائن اپ' : 'সাইন আপ'}
+                    </span>
+                  </button>
+                )}
                 <span className="text-sm sm:text-base font-bold text-white tracking-wide">
                   {shortHijriDate}
                 </span>
@@ -381,6 +414,51 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
               </div>
             </header>
 
+            {/* 2. New User Signup with Email & mPIN Invitation Banner */}
+            {!currentUser && !dismissSignupBanner && (
+              <div className="bg-gradient-to-r from-[#09332E] via-[#0d413b] to-[#09332E] border border-[#E2A336]/40 p-3.5 rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#E2A336]/20 border border-[#E2A336]/40 flex items-center justify-center text-[#E2A336] shrink-0 shadow-inner">
+                    <KeyRound className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 flex-wrap">
+                      <span>{lang === 'en' ? 'New User? Sign Up with Email & mPIN' : lang === 'ur' ? 'نیا صارف؟ ای میل اور mPIN کے ساتھ سائن اپ کریں' : 'নতুন ব্যবহারকারী? ইমেইল ও mPIN দিয়ে একাউন্ট খুলুন'}</span>
+                      <span className="text-[10px] bg-[#E2A336] text-[#03221F] font-black px-1.5 py-0.5 rounded-md">FREE</span>
+                    </h3>
+                    <p className="text-[11px] text-emerald-200/90 mt-0.5">
+                      {lang === 'en'
+                        ? 'Quick 4-digit mPIN security. Keep your prayer settings & submissions saved.'
+                        : lang === 'ur'
+                        ? 'فوری 4 ہندسوں والا پن کوڈ۔ اپنی ترتیبات محفوظ رکھیں۔'
+                        : '৪ সংখ্যার গোপন mPIN সেট করুন — আপনার সকল ডাটা ও সেটিংস সবসময় সুরক্ষিত থাকবে।'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 shrink-0 pt-1 sm:pt-0">
+                  <button
+                    onClick={() => onOpenAuth?.('signup')}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#E2A336] to-amber-400 hover:brightness-105 text-[#03221F] font-bold text-xs shadow-xs transition-transform active:scale-95 cursor-pointer"
+                  >
+                    {lang === 'en' ? 'Sign Up (mPIN)' : lang === 'ur' ? 'سائن اپ' : 'সাইন আপ'}
+                  </button>
+                  <button
+                    onClick={() => onOpenAuth?.('login')}
+                    className="px-2.5 py-1.5 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    {lang === 'en' ? 'Login' : lang === 'ur' ? 'لاگ ان' : 'লগইন'}
+                  </button>
+                  <button
+                    onClick={() => setDismissSignupBanner(true)}
+                    className="p-1 text-emerald-400/60 hover:text-white transition-colors cursor-pointer"
+                    title={lang === 'en' ? 'Dismiss' : 'বন্ধ করুন'}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* 3. Prayer Times Main Card (HIGHLIGHTED IN RED IN USER'S SCREENSHOT) */}
             <div
