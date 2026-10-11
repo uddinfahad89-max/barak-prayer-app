@@ -188,32 +188,6 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Mosque & Jamaat Settings */}
-          {onOpenMosqueSettings && (
-            <button
-              id="open-mosque-modal-btn"
-              onClick={onOpenMosqueSettings}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-900 hover:bg-emerald-800 border border-emerald-700/50 text-xs font-medium text-emerald-200 hover:text-white transition-colors cursor-pointer shadow-xs"
-              title="Configure Mosque name & Jamaat times"
-            >
-              <Building2 className="w-3.5 h-3.5 text-amber-300" />
-              <span>{mosqueName ? `🕌 ${mosqueName}` : lang === 'en' ? '🕌 Jamaat Times' : lang === 'ur' ? '🕌 جماعت وقت' : '🕌 জামাত সময়'}</span>
-            </button>
-          )}
-
-          {/* Install / Security Help Guide */}
-          {onOpenInstallHelp && (
-            <button
-              id="open-install-help-btn"
-              onClick={onOpenInstallHelp}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-800/90 hover:bg-emerald-700 border border-emerald-600/50 text-xs font-medium text-emerald-100 hover:text-white transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-              title="Install Guide"
-            >
-              <Smartphone className="w-3.5 h-3.5 text-amber-300" />
-              <span>{t.installGuide}</span>
-            </button>
-          )}
-
           {/* Location Picker (Barak Valley & All India) */}
           {onOpenLocationPicker && (
             <button
@@ -230,57 +204,6 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
           )}
-
-          {/* User Auth (Email & mPIN Signup / Profile) */}
-          {onOpenAuth && (
-            currentUser ? (
-              <button
-                id="header-user-profile-btn"
-                onClick={() => onOpenAuth('profile')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/90 hover:bg-emerald-800 border border-emerald-700/60 text-xs font-semibold text-emerald-100 transition-colors cursor-pointer shadow-xs"
-                title={currentUser.name}
-              >
-                <div className="w-4 h-4 rounded-full bg-[#E2A336] text-[#03221F] font-bold text-[10px] flex items-center justify-center">
-                  {currentUser.name.charAt(0).toUpperCase()}
-                </div>
-                <span>{currentUser.name.split(' ')[0]}</span>
-              </button>
-            ) : (
-              <button
-                id="header-user-signup-btn"
-                onClick={() => onOpenAuth('signup')}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#E2A336] to-amber-400 hover:brightness-105 text-[#03221F] text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
-                title="ইমেইল ও mPIN দিয়ে সাইন আপ করুন"
-              >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>{lang === 'en' ? 'Sign Up (mPIN)' : lang === 'ur' ? 'سائن اپ (mPIN)' : 'সাইন আপ (mPIN)'}</span>
-              </button>
-            )
-          )}
-
-          {/* Firebase Cloud Sync */}
-          {onOpenFirebaseSync && (
-            <button
-              id="header-firebase-sync-btn"
-              onClick={onOpenFirebaseSync}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-800/80 hover:bg-emerald-700/80 border border-emerald-500/40 text-xs font-semibold text-emerald-100 transition-colors cursor-pointer shadow-xs"
-              title="ফায়ারবেস ক্লাউড ডাটা সিঙ্ক (Firebase Cloud Sync)"
-            >
-              <Cloud className="w-3.5 h-3.5 text-amber-300" />
-              <span>{lang === 'bn' ? 'ফায়ারবেস ক্লাউড' : 'Firebase Cloud'}</span>
-            </button>
-          )}
-
-          {/* JSON Data & Configuration */}
-          <button
-            id="open-data-modal-btn"
-            onClick={onOpenDataModal}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-xs font-medium text-amber-200 transition-colors"
-            title="View & edit timetable data JSON"
-          >
-            <Code2 className="w-3.5 h-3.5 text-amber-300" />
-            <span>JSON Timetable</span>
-          </button>
         </div>
       </div>
 

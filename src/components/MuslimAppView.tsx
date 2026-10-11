@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   User,
   Coins,
@@ -27,6 +27,9 @@ import {
   KeyRound,
   X,
   Cloud,
+  MoreVertical,
+  Code2,
+  Smartphone,
 } from 'lucide-react';
 import { QiblaModal } from './QiblaModal';
 import { TasbihModal } from './TasbihModal';
@@ -76,6 +79,8 @@ interface MuslimAppViewProps {
   currentUser?: UserAccount | null;
   onOpenAuth?: (mode?: AuthMode) => void;
   onOpenFirebaseSync?: () => void;
+  onOpenDataModal?: () => void;
+  onOpenInstallHelp?: () => void;
 }
 
 export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
@@ -105,6 +110,8 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
   currentUser,
   onOpenAuth,
   onOpenFirebaseSync,
+  onOpenDataModal,
+  onOpenInstallHelp,
 }) => {
   // Signup banner dismissal state
   const [dismissSignupBanner, setDismissSignupBanner] = useState<boolean>(false);
@@ -139,6 +146,31 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
   const [selectedForYouTitle, setSelectedForYouTitle] = useState<string>('');
   const [isGiftModalOpen, setIsGiftModalOpen] = useState<boolean>(false);
   const [isNotificationInfoOpen, setIsNotificationInfoOpen] = useState<boolean>(false);
+
+  // 3-Dot (Kebab) menu dropdown state and ref
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMoreMenuOpen(false);
+      }
+    };
+    if (isMoreMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMoreMenuOpen]);
 
   const t = TRANSLATIONS[lang];
 
@@ -311,7 +343,7 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
             <header className="flex items-center justify-between gap-2 pt-1 pb-2">
               {/* Profile Avatar & Hijri Date */}
               <div className="flex items-center gap-2.5">
-                {currentUser ? (
+                {currentUser && (
                   <button
                     onClick={() => onOpenAuth ? onOpenAuth('profile') : setIsNotificationInfoOpen(true)}
                     className="flex items-center gap-2 group cursor-pointer"
@@ -328,17 +360,6 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                         {lang === 'en' ? 'Profile' : 'প্রোফাইল'}
                       </span>
                     </div>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => onOpenAuth ? onOpenAuth('signup') : setIsNotificationInfoOpen(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-[#E2A336] to-amber-400 text-[#03221F] font-bold text-xs shadow-md hover:brightness-105 active:scale-95 transition-all shrink-0 cursor-pointer"
-                    title={lang === 'en' ? 'Sign Up with Email & mPIN' : 'ইমেইল ও mPIN দিয়ে সাইন আপ করুন'}
-                  >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-bold">
-                      {lang === 'en' ? 'Sign Up' : lang === 'ur' ? 'سائن اپ' : 'সাইন আপ'}
-                    </span>
                   </button>
                 )}
                 <span className="text-sm sm:text-base font-bold text-white tracking-wide">
@@ -383,8 +404,8 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                 </button>
               </div>
 
-              {/* Coin Counter, Notification, Gift */}
-              <div className="flex items-center gap-2 sm:gap-2.5">
+              {/* Coin Counter & 3-Dot (Kebab) More Menu */}
+              <div className="flex items-center gap-2 sm:gap-2.5 relative" ref={moreMenuRef}>
                 {/* Coin Counter Pill */}
                 <button
                   onClick={() => setIsTasbihOpen(true)}
@@ -397,85 +418,289 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                   <span className="text-xs sm:text-sm font-bold text-white">{coins}</span>
                 </button>
 
-                {/* Firebase Cloud Sync Button */}
-                {onOpenFirebaseSync && (
-                  <button
-                    id="muslim-view-cloud-sync-btn"
-                    onClick={onOpenFirebaseSync}
-                    className="p-1.5 text-amber-300 hover:text-amber-200 hover:bg-emerald-800/40 rounded-full transition-colors"
-                    title={lang === 'bn' ? 'ফায়ারবেস ক্লাউড ডাটা সিঙ্ক' : 'Firebase Cloud Sync'}
+                {/* 3-Dot Menu Button (Replacing all separate buttons into 3 dots) */}
+                <button
+                  id="topbar-three-dot-menu-btn"
+                  onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                  className={`p-1.5 sm:p-2 rounded-full border transition-all relative cursor-pointer ${
+                    isMoreMenuOpen
+                      ? 'bg-[#E2A336] text-[#03221F] border-[#E2A336] shadow-md shadow-amber-500/20'
+                      : 'bg-[#09332E] hover:bg-emerald-800/60 text-stone-200 hover:text-white border-white/10 hover:border-[#E2A336]/40'
+                  }`}
+                  aria-label="More options"
+                  title={lang === 'bn' ? '৩ ডট মেনু ও অপশন' : lang === 'ur' ? 'مزید اختیارات' : 'More options & settings'}
+                >
+                  <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+
+                {/* 3-Dot Dropdown Menu Popup */}
+                {isMoreMenuOpen && (
+                  <div
+                    id="topbar-three-dot-dropdown"
+                    className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-[#062622] border border-[#E2A336]/40 rounded-2xl shadow-2xl z-50 overflow-hidden ring-1 ring-black/50 animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md"
                   >
-                    <Cloud className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                  </button>
+                    {/* Header */}
+                    <div className="px-4 py-3 bg-gradient-to-r from-[#03221F] to-[#083832] border-b border-white/10 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-[#E2A336] animate-pulse" />
+                        <span className="text-xs font-bold text-white tracking-wide">
+                          {lang === 'bn' ? 'মেনু ও সেটিংস' : lang === 'ur' ? 'اختیارات اور ترتیبات' : 'Menu & Options'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[#E2A336] bg-[#E2A336]/15 px-2 py-0.5 rounded-full font-bold border border-[#E2A336]/30">
+                        {lang === 'bn' ? '৩ ডট মেনু' : '3-Dot Menu'}
+                      </span>
+                    </div>
+
+                    <div className="p-2 max-h-[75vh] overflow-y-auto space-y-1">
+                      {/* 1. Firebase Cloud Sync */}
+                      {onOpenFirebaseSync && (
+                        <button
+                          id="threedot-item-firebase"
+                          onClick={() => {
+                            setIsMoreMenuOpen(false);
+                            onOpenFirebaseSync();
+                          }}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-[#E2A336] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                              <Cloud className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                                {lang === 'bn' ? 'ফায়ারবেস ক্লাউড ডাটা সিঙ্ক' : lang === 'ur' ? 'فائر بیس کلاؤڈ سنک' : 'Firebase Cloud Sync'}
+                              </div>
+                              <div className="text-[10px] text-emerald-300/80 truncate">
+                                {lang === 'bn' ? 'ক্লাউডে সকল ডাটা সেভ ও ব্যাকআপ' : 'Save all data to cloud'}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[9px] bg-amber-400/20 text-amber-300 px-1.5 py-0.5 rounded font-mono shrink-0">
+                            Cloud
+                          </span>
+                        </button>
+                      )}
+
+                      {/* 2. Notifications Bell */}
+                      <button
+                        id="threedot-item-notification"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          setIsNotificationInfoOpen(true);
+                        }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-800/40 text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <Bell className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                              {lang === 'bn' ? 'আজান ও ওয়াক্ত নোটিফিকেশন' : lang === 'ur' ? 'اذان اور نماز کے نوٹیفکیشن' : 'Prayer & Azan Alerts'}
+                            </div>
+                            <div className="text-[10px] text-emerald-300/80 truncate">
+                              {lang === 'bn' ? 'ওয়াক্ত শুরুর রিমাইন্ডার ও এলার্ট' : 'Prayer notifications and sound'}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                      </button>
+
+                      {/* 3. Daily Gift Box */}
+                      <button
+                        id="threedot-item-gift"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          setIsGiftModalOpen(true);
+                        }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-[#E2A336]/20 text-[#E2A336] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <Gift className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                              {lang === 'bn' ? 'দৈনিক হাদিয়া / উপহার' : lang === 'ur' ? 'روزانہ تحفہ' : 'Daily Gift Rewards'}
+                            </div>
+                            <div className="text-[10px] text-emerald-300/80 truncate">
+                              {lang === 'bn' ? 'আজকের ফ্রি বোনাস কয়েন সংগ্রহ করুন' : 'Collect daily free coin bonus'}
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-[9px] bg-[#E2A336] text-[#03221F] font-bold px-1.5 py-0.5 rounded shrink-0">
+                          FREE
+                        </span>
+                      </button>
+
+                      {/* Divider */}
+                      <div className="h-px bg-white/10 my-1" />
+
+                      {/* 4. Mosque & Jamaat Settings */}
+                      <button
+                        id="threedot-item-mosque"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          onOpenMosqueSettings();
+                        }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-800/40 text-amber-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                              {lang === 'bn' ? 'মসজিদের জামাত সেটিংস' : lang === 'ur' ? 'مسجد کی جماعت کے اوقات' : 'Mosque Jamaat Settings'}
+                            </div>
+                            <div className="text-[10px] text-emerald-300/80 truncate">
+                              {mosqueName || (lang === 'bn' ? 'মসজিদের নাম ও ৫ ওয়াক্ত জামাত' : 'Local mosque jamaat times')}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-white shrink-0" />
+                      </button>
+
+                      {/* 5. Install App Guide */}
+                      {onOpenInstallHelp && (
+                        <button
+                          id="threedot-item-install"
+                          onClick={() => {
+                            setIsMoreMenuOpen(false);
+                            onOpenInstallHelp();
+                          }}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-800/40 text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                              <Smartphone className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                                {lang === 'bn' ? 'অ্যাপ ইন্সটল ও সিকিউরিটি গাইড' : 'App Install & Security'}
+                              </div>
+                              <div className="text-[10px] text-emerald-300/80 truncate">
+                                {lang === 'bn' ? 'হোমস্ক্রিনে অ্যাপ হিসেবে যোগ করুন' : 'Add to home screen as PWA'}
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-white shrink-0" />
+                        </button>
+                      )}
+
+                      {/* 6. JSON Timetable Data */}
+                      {onOpenDataModal && (
+                        <button
+                          id="threedot-item-json"
+                          onClick={() => {
+                            setIsMoreMenuOpen(false);
+                            onOpenDataModal();
+                          }}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-emerald-800/40 text-amber-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                              <Code2 className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                                {lang === 'bn' ? 'JSON বার্ষিক সময়সূচি' : 'JSON Timetable Data'}
+                              </div>
+                              <div className="text-[10px] text-emerald-300/80 truncate">
+                                {lang === 'bn' ? '৩৬৫ দিনের নামাজের সঠিক সময় ও অফসেট' : 'View & edit timetable JSON'}
+                              </div>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-white shrink-0" />
+                        </button>
+                      )}
+
+                      {/* 7. Daily Journal & Amal Tracker */}
+                      <button
+                        id="threedot-item-journal"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          setIsJournalOpen(true);
+                        }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-800/40 text-[#E2A336] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <FileEdit className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                              {lang === 'bn' ? 'দৈনিক আমল ট্র্যাকার ও নোট' : lang === 'ur' ? 'اعمال کا ٹریکر' : 'Daily Amal Tracker'}
+                            </div>
+                            <div className="text-[10px] text-emerald-300/80 truncate">
+                              {lang === 'bn' ? 'আজকের নামাজ ও নেক আমল নোট' : 'Track daily prayers & good deeds'}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-white shrink-0" />
+                      </button>
+
+                      {/* 8. Qibla Compass */}
+                      <button
+                        id="threedot-item-qibla"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          setIsQiblaOpen(true);
+                        }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-emerald-900/60 active:bg-emerald-800 transition-colors text-left group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-8 h-8 rounded-lg bg-emerald-800/40 text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                            <Compass className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                              {lang === 'bn' ? 'কিবলা কম্পাস' : lang === 'ur' ? 'قبلہ کمپاس' : 'Qibla Compass'}
+                            </div>
+                            <div className="text-[10px] text-emerald-300/80 truncate">
+                              {lang === 'bn' ? 'মক্কার সঠিক দিক নির্দেশনা' : 'Find Kaaba direction'}
+                            </div>
+                          </div>
+                        </div>
+                        <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-white shrink-0" />
+                      </button>
+
+                      {/* 9. User Account / Profile */}
+                      {onOpenAuth && (
+                        <button
+                          id="threedot-item-auth"
+                          onClick={() => {
+                            setIsMoreMenuOpen(false);
+                            onOpenAuth(currentUser ? 'profile' : 'signup');
+                          }}
+                          className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-emerald-900/40 to-[#03221F] hover:from-emerald-900/70 border border-white/5 transition-colors text-left group mt-1 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-[#E2A336]/20 text-[#E2A336] flex items-center justify-center shrink-0 font-bold text-xs">
+                              {currentUser ? currentUser.name.charAt(0).toUpperCase() : <KeyRound className="w-4 h-4" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-white group-hover:text-[#E2A336] transition-colors truncate">
+                                {currentUser ? currentUser.name : (lang === 'bn' ? 'নতুন একাউন্ট / লগইন (mPIN)' : 'Sign Up / Login (mPIN)')}
+                              </div>
+                              <div className="text-[10px] text-emerald-300/80 truncate">
+                                {currentUser ? currentUser.email : (lang === 'bn' ? 'ইমেইল ও ৪ সংখ্যার গোপন mPIN' : 'Email & 4-digit mPIN')}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-[#E2A336] font-bold shrink-0">
+                            {currentUser ? 'Profile' : 'Sign Up'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
-
-                {/* Notifications Bell */}
-                <button
-                  onClick={() => setIsNotificationInfoOpen(true)}
-                  className="p-1.5 text-stone-200 hover:text-white transition-colors"
-                  aria-label="Notifications"
-                >
-                  <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-
-                {/* Gift Box Icon */}
-                <button
-                  onClick={() => setIsGiftModalOpen(true)}
-                  className="p-1.5 text-[#E2A336] hover:text-yellow-300 transition-colors animate-bounce"
-                  aria-label="Daily Gift"
-                >
-                  <Gift className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
               </div>
             </header>
 
-            {/* 2. New User Signup with Email & mPIN Invitation Banner */}
-            {!currentUser && !dismissSignupBanner && (
-              <div className="bg-gradient-to-r from-[#09332E] via-[#0d413b] to-[#09332E] border border-[#E2A336]/40 p-3.5 rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#E2A336]/20 border border-[#E2A336]/40 flex items-center justify-center text-[#E2A336] shrink-0 shadow-inner">
-                    <KeyRound className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 flex-wrap">
-                      <span>{lang === 'en' ? 'New User? Sign Up with Email & mPIN' : lang === 'ur' ? 'نیا صارف؟ ای میل اور mPIN کے ساتھ سائن اپ کریں' : 'নতুন ব্যবহারকারী? ইমেইল ও mPIN দিয়ে একাউন্ট খুলুন'}</span>
-                      <span className="text-[10px] bg-[#E2A336] text-[#03221F] font-black px-1.5 py-0.5 rounded-md">FREE</span>
-                    </h3>
-                    <p className="text-[11px] text-emerald-200/90 mt-0.5">
-                      {lang === 'en'
-                        ? 'Quick 4-digit mPIN security. Keep your prayer settings & submissions saved.'
-                        : lang === 'ur'
-                        ? 'فوری 4 ہندسوں والا پن کوڈ۔ اپنی ترتیبات محفوظ رکھیں۔'
-                        : '৪ সংখ্যার গোপন mPIN সেট করুন — আপনার সকল ডাটা ও সেটিংস সবসময় সুরক্ষিত থাকবে।'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 shrink-0 pt-1 sm:pt-0">
-                  <button
-                    onClick={() => onOpenAuth?.('signup')}
-                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#E2A336] to-amber-400 hover:brightness-105 text-[#03221F] font-bold text-xs shadow-xs transition-transform active:scale-95 cursor-pointer"
-                  >
-                    {lang === 'en' ? 'Sign Up (mPIN)' : lang === 'ur' ? 'سائن اپ' : 'সাইন আপ'}
-                  </button>
-                  <button
-                    onClick={() => onOpenAuth?.('login')}
-                    className="px-2.5 py-1.5 rounded-xl bg-emerald-900/80 hover:bg-emerald-800 text-emerald-200 text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    {lang === 'en' ? 'Login' : lang === 'ur' ? 'لاگ ان' : 'লগইন'}
-                  </button>
-                  <button
-                    onClick={() => setDismissSignupBanner(true)}
-                    className="p-1 text-emerald-400/60 hover:text-white transition-colors cursor-pointer"
-                    title={lang === 'en' ? 'Dismiss' : 'বন্ধ করুন'}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 3. Prayer Times Main Card (HIGHLIGHTED IN RED IN USER'S SCREENSHOT) */}
+            {/* 3. Prayer Times Main Card */}
             <div
               className="bg-[#09332E] border border-white/5 hover:border-[#E2A336]/30 rounded-2xl p-4 sm:p-5 shadow-xl transition-all relative overflow-hidden group"
               id="main-prayer-card"
@@ -1014,8 +1239,6 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
         >
           <div className="relative">
             <Plane className={`w-5 h-5 ${activeTab === 'ummah' ? 'text-[#E2A336]' : ''}`} />
-            {/* Red badge dot as shown in screenshot */}
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-[#09332E]" />
           </div>
           <span className="text-[11px] font-semibold">{t.ummah}</span>
         </button>

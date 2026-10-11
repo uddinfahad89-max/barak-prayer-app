@@ -792,6 +792,8 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={handleOpenAuth}
         onOpenFirebaseSync={() => setIsFirebaseSyncOpen(true)}
+        onOpenDataModal={() => setIsDataModalOpen(true)}
+        onOpenInstallHelp={() => setIsInstallHelpOpen(true)}
         prayersChildren={
           <div className="space-y-6 pb-20">
             {/* Top Header */}
