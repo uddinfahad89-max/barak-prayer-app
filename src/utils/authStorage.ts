@@ -1,4 +1,6 @@
 import { UserAccount } from '../types/auth';
+import { db } from './firebase';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 const STORAGE_USERS_KEY = 'app_registered_users_v1';
 const STORAGE_CURRENT_USER_KEY = 'app_current_user_v1';
@@ -36,13 +38,17 @@ export function setCurrentUser(user: UserAccount | null): void {
   }
 }
 
-export function registerWithEmailAndPin(params: {
+/**
+ * Register user with Email and mPIN.
+ * Saves locally in localStorage and automatically syncs to Firebase Firestore in the cloud.
+ */
+export async function registerWithEmailAndPin(params: {
   name: string;
   email: string;
   mPin: string;
   phone?: string;
   district?: string;
-}): { success: boolean; error?: string; user?: UserAccount } {
+}): Promise<{ success: boolean; error?: string; user?: UserAccount }> {
   const { name, email, mPin, phone, district } = params;
 
   const trimmedEmail = email.trim().toLowerCase();
@@ -61,13 +67,28 @@ export function registerWithEmailAndPin(params: {
     return { success: false, error: 'mPIN অবশ্যই ৪ থেকে ৬ সংখ্যার নাম্বার হতে হবে (mPIN must be 4 to 6 digits)' };
   }
 
+  // 1. Check local users
   const existingUsers = getStoredUsers();
-  const existing = existingUsers.find((u) => u.email.toLowerCase() === trimmedEmail);
-  if (existing) {
+  const existingLocal = existingUsers.find((u) => u.email.toLowerCase() === trimmedEmail);
+  if (existingLocal) {
     return {
       success: false,
       error: 'এই ইমেইল দিয়ে ইতিমধ্যে একাউন্ট খোলা আছে। দয়া করে লগইন করুন (Email already registered. Please login)',
     };
+  }
+
+  // 2. Check cloud Firestore if account already exists
+  try {
+    const userDocRef = doc(db, 'users', trimmedEmail);
+    const cloudDoc = await getDoc(userDocRef);
+    if (cloudDoc.exists()) {
+      return {
+        success: false,
+        error: 'এই ইমেইল দিয়ে ইতিমধ্যে ক্লাউডে একাউন্ট রয়েছে। দয়া করে লগইন করুন (Account already exists on cloud. Please login)',
+      };
+    }
+  } catch (err) {
+    console.warn('Firebase check offline/warning:', err);
   }
 
   const newUser: UserAccount = {
@@ -81,21 +102,42 @@ export function registerWithEmailAndPin(params: {
     lastLoginAt: new Date().toISOString(),
   };
 
+  // 3. Save to localStorage
   const updatedList = [newUser, ...existingUsers];
   try {
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(updatedList));
   } catch {
     // ignore
   }
-
   setCurrentUser(newUser);
+
+  // 4. Sync to Firebase Firestore in the cloud
+  try {
+    const userDocRef = doc(db, 'users', trimmedEmail);
+    await setDoc(
+      userDocRef,
+      {
+        ...newUser,
+        syncedAt: new Date().toISOString(),
+        firebaseProjectId: 'classic-fashion-pos',
+      },
+      { merge: true }
+    );
+  } catch (err) {
+    console.warn('Firebase sync warning (offline or permissions):', err);
+  }
+
   return { success: true, user: newUser };
 }
 
-export function loginWithEmailAndPin(
+/**
+ * Login user with Email and mPIN.
+ * Checks localStorage first, and queries cloud Firestore if logging in on a new device.
+ */
+export async function loginWithEmailAndPin(
   email: string,
   mPin: string
-): { success: boolean; error?: string; user?: UserAccount } {
+): Promise<{ success: boolean; error?: string; user?: UserAccount }> {
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedPin = mPin.trim();
 
@@ -108,7 +150,33 @@ export function loginWithEmailAndPin(
   }
 
   const users = getStoredUsers();
-  const user = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+  let user = users.find((u) => u.email.toLowerCase() === trimmedEmail);
+
+  // If not found in localStorage, fetch from cloud Firestore (cross-device login)
+  if (!user) {
+    try {
+      const userDocRef = doc(db, 'users', trimmedEmail);
+      const cloudSnap = await getDoc(userDocRef);
+      if (cloudSnap.exists()) {
+        const cloudData = cloudSnap.data() as UserAccount;
+        user = {
+          id: cloudData.id || `user_${Date.now()}`,
+          name: cloudData.name,
+          email: cloudData.email,
+          mPin: cloudData.mPin,
+          phone: cloudData.phone || '',
+          district: cloudData.district || 'Karimganj',
+          createdAt: cloudData.createdAt || new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
+        };
+        // Cache to localStorage
+        const mergedList = [user, ...users.filter((u) => u.email.toLowerCase() !== trimmedEmail)];
+        localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(mergedList));
+      }
+    } catch (err) {
+      console.warn('Firebase cloud fetch warning:', err);
+    }
+  }
 
   if (!user) {
     return {
@@ -124,12 +192,12 @@ export function loginWithEmailAndPin(
     };
   }
 
-  const updatedUser = {
+  const updatedUser: UserAccount = {
     ...user,
     lastLoginAt: new Date().toISOString(),
   };
 
-  const updatedList = users.map((u) => (u.id === user.id ? updatedUser : u));
+  const updatedList = users.map((u) => (u.id === user?.id ? updatedUser : u));
   try {
     localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(updatedList));
   } catch {
@@ -137,13 +205,30 @@ export function loginWithEmailAndPin(
   }
 
   setCurrentUser(updatedUser);
+
+  // Background update on Firebase Firestore
+  try {
+    const userDocRef = doc(db, 'users', trimmedEmail);
+    updateDoc(userDocRef, {
+      lastLoginAt: updatedUser.lastLoginAt,
+    }).catch(() => {
+      // ignore
+    });
+  } catch {
+    // ignore
+  }
+
   return { success: true, user: updatedUser };
 }
 
-export function updateUserPin(
+/**
+ * Update user mPIN (Forgot PIN / Reset).
+ * Synchronizes new PIN both locally and in Firebase Firestore.
+ */
+export async function updateUserPin(
   email: string,
   newPin: string
-): { success: boolean; error?: string } {
+): Promise<{ success: boolean; error?: string }> {
   const trimmedEmail = email.trim().toLowerCase();
   const trimmedPin = newPin.trim();
 
@@ -154,15 +239,13 @@ export function updateUserPin(
   const users = getStoredUsers();
   const userIndex = users.findIndex((u) => u.email.toLowerCase() === trimmedEmail);
 
-  if (userIndex === -1) {
-    return { success: false, error: 'একাউন্ট পাওয়া যায়নি (User not found)' };
-  }
-
-  users[userIndex].mPin = trimmedPin;
-  try {
-    localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
-  } catch {
-    // ignore
+  if (userIndex !== -1) {
+    users[userIndex].mPin = trimmedPin;
+    try {
+      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
+    } catch {
+      // ignore
+    }
   }
 
   const current = getCurrentUser();
@@ -171,7 +254,22 @@ export function updateUserPin(
     setCurrentUser(current);
   }
 
-  return { success: true };
+  // Update in Firebase Firestore
+  try {
+    const userDocRef = doc(db, 'users', trimmedEmail);
+    await updateDoc(userDocRef, {
+      mPin: trimmedPin,
+      pinUpdatedAt: new Date().toISOString(),
+    });
+    return { success: true };
+  } catch (err) {
+    console.warn('Firebase PIN update error:', err);
+    // If updated locally, still allow success
+    if (userIndex !== -1) {
+      return { success: true };
+    }
+    return { success: false, error: 'একাউন্ট পাওয়া যায়নি (User account not found)' };
+  }
 }
 
 export function logoutUser(): void {

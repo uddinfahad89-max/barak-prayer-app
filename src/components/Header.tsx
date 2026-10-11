@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon, Smartphone, User, KeyRound } from 'lucide-react';
+import { Clock, MapPin, Sliders, Volume2, Code2, Calendar, LocateFixed, Loader2, X, Building2, Moon, Smartphone, User, KeyRound, Cloud } from 'lucide-react';
 import { LocationMeta, AppLanguage } from '../types';
 import { playPrayerChime } from '../utils/audioAlert';
 import { calculateHijriFromDate, toBengaliNumerals } from '../utils/hijriCalendar';
@@ -35,6 +35,7 @@ interface HeaderProps {
   lang?: AppLanguage;
   currentUser?: UserAccount | null;
   onOpenAuth?: (mode?: AuthMode) => void;
+  onOpenFirebaseSync?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -66,6 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
   lang = 'en',
   currentUser,
   onOpenAuth,
+  onOpenFirebaseSync,
 }) => {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const [districtFilter, setDistrictFilter] = useState<'all' | 'Cachar' | 'Hailakandi' | 'Karimganj'>('all');
@@ -254,6 +256,19 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>{lang === 'en' ? 'Sign Up (mPIN)' : lang === 'ur' ? 'سائن اپ (mPIN)' : 'সাইন আপ (mPIN)'}</span>
               </button>
             )
+          )}
+
+          {/* Firebase Cloud Sync */}
+          {onOpenFirebaseSync && (
+            <button
+              id="header-firebase-sync-btn"
+              onClick={onOpenFirebaseSync}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-800/80 hover:bg-emerald-700/80 border border-emerald-500/40 text-xs font-semibold text-emerald-100 transition-colors cursor-pointer shadow-xs"
+              title="ফায়ারবেস ক্লাউড ডাটা সিঙ্ক (Firebase Cloud Sync)"
+            >
+              <Cloud className="w-3.5 h-3.5 text-amber-300" />
+              <span>{lang === 'bn' ? 'ফায়ারবেস ক্লাউড' : 'Firebase Cloud'}</span>
+            </button>
           )}
 
           {/* JSON Data & Configuration */}

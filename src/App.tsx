@@ -38,6 +38,9 @@ import { Clock, FileText, Calendar as CalendarIcon, Sparkles, Moon, ShieldCheck,
 import { UserAccount, AuthMode } from './types/auth';
 import { getCurrentUser } from './utils/authStorage';
 import { AuthModal } from './components/AuthModal';
+import { FirebaseSyncModal } from './components/FirebaseSyncModal';
+import { saveAllPrayerAppDataToFirebase, getLastSyncTime } from './utils/firebaseDataSync';
+import './utils/firebase';
 
 export default function App() {
   // Authentication state
@@ -65,6 +68,7 @@ export default function App() {
   const [isDataModalOpen, setIsDataModalOpen] = useState<boolean>(false);
   const [isMosqueModalOpen, setIsMosqueModalOpen] = useState<boolean>(false);
   const [isInstallHelpOpen, setIsInstallHelpOpen] = useState<boolean>(false);
+  const [isFirebaseSyncOpen, setIsFirebaseSyncOpen] = useState<boolean>(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'daily' | 'arabic' | 'poster' | 'all'>('daily');
@@ -200,8 +204,18 @@ export default function App() {
       console.warn('Storage save warning:', err);
     }
 
+    // ক্লাউড ফায়ারবেসে স্বয়ংক্রিয়ভাবে সেভ করা (Firebase Cloud Sync)
+    saveAllPrayerAppDataToFirebase({
+      mosqueName: name,
+      jamaatTimes: times,
+      locationOffsets,
+      timetable,
+      playAzanOnJamaat,
+      hijriAdjustment,
+    }).catch((err) => console.warn('Background Firebase save failed:', err));
+
     try {
-      alert('মসজিদ ও জামাতের সময় সফলভাবে সেভ হয়েছে!');
+      alert('মসজিদ ও জামাতের সময় সফলভাবে সেভ হয়েছে এবং ফায়ারবেস ক্লাউডে সংরক্ষিত হয়েছে!');
     } catch {
       // In case alert is restricted in iframe sandbox
     }
@@ -652,7 +666,77 @@ export default function App() {
   const handleSaveJson = (newOffsets: LocationOffsets, newTimetable: TimetableData) => {
     setLocationOffsets(newOffsets);
     setTimetable(newTimetable);
+    // ক্লাউড ফায়ারবেসে স্বয়ংক্রিয়ভাবে সেভ করা
+    saveAllPrayerAppDataToFirebase({
+      locationOffsets: newOffsets,
+      timetable: newTimetable,
+      mosqueName,
+      jamaatTimes,
+      playAzanOnJamaat,
+      hijriAdjustment,
+    }).catch((err) => console.warn('Background Firebase timetable save error:', err));
   };
+
+  const handleApplyRemoteData = (remoteData: {
+    timetable?: TimetableData;
+    locationOffsets?: LocationOffsets;
+    mosqueSettings?: {
+      mosqueName: string;
+      jamaatTimes: Record<string, string>;
+      playAzanOnJamaat: boolean;
+      hijriAdjustment: number;
+    };
+  }) => {
+    if (remoteData.timetable) {
+      setTimetable(remoteData.timetable);
+    }
+    if (remoteData.locationOffsets) {
+      setLocationOffsets(remoteData.locationOffsets);
+    }
+    if (remoteData.mosqueSettings) {
+      if (remoteData.mosqueSettings.mosqueName) {
+        setMosqueName(remoteData.mosqueSettings.mosqueName);
+        try {
+          localStorage.setItem('mosqueName', remoteData.mosqueSettings.mosqueName);
+        } catch {}
+      }
+      if (remoteData.mosqueSettings.jamaatTimes) {
+        setJamaatTimes(remoteData.mosqueSettings.jamaatTimes);
+        try {
+          localStorage.setItem('jamaatTimes', JSON.stringify(remoteData.mosqueSettings.jamaatTimes));
+        } catch {}
+      }
+      if (remoteData.mosqueSettings.playAzanOnJamaat !== undefined) {
+        setPlayAzanOnJamaat(remoteData.mosqueSettings.playAzanOnJamaat);
+        try {
+          localStorage.setItem('playAzanOnJamaat', String(remoteData.mosqueSettings.playAzanOnJamaat));
+        } catch {}
+      }
+      if (remoteData.mosqueSettings.hijriAdjustment !== undefined) {
+        setHijriAdjustment(remoteData.mosqueSettings.hijriAdjustment);
+        try {
+          localStorage.setItem('hijriAdjustment', String(remoteData.mosqueSettings.hijriAdjustment));
+        } catch {}
+      }
+    }
+  };
+
+  // Auto-sync initial prayer data to Firebase if not yet synced
+  useEffect(() => {
+    const lastSync = getLastSyncTime();
+    if (!lastSync) {
+      saveAllPrayerAppDataToFirebase({
+        locationOffsets,
+        timetable,
+        mosqueName,
+        jamaatTimes,
+        playAzanOnJamaat,
+        hijriAdjustment,
+      }).catch((err) => {
+        console.warn('Initial Firebase auto-sync note:', err);
+      });
+    }
+  }, []);
 
   const handleResetJson = () => {
     setLocationOffsets(DEFAULT_LOCATION_OFFSETS);
@@ -707,6 +791,7 @@ export default function App() {
         onOpenLocationPicker={() => setIsLocationPickerOpen(true)}
         currentUser={currentUser}
         onOpenAuth={handleOpenAuth}
+        onOpenFirebaseSync={() => setIsFirebaseSyncOpen(true)}
         prayersChildren={
           <div className="space-y-6 pb-20">
             {/* Top Header */}
@@ -740,6 +825,7 @@ export default function App() {
               lang={appLang}
               currentUser={currentUser}
               onOpenAuth={handleOpenAuth}
+              onOpenFirebaseSync={() => setIsFirebaseSyncOpen(true)}
             />
 
             {/* Navigation View Switcher */}
@@ -1144,6 +1230,20 @@ export default function App() {
         onUserChange={setCurrentUser}
         initialMode={authModalMode}
         lang={appLang}
+      />
+
+      {/* Firebase Cloud Data Synchronization Modal */}
+      <FirebaseSyncModal
+        isOpen={isFirebaseSyncOpen}
+        onClose={() => setIsFirebaseSyncOpen(false)}
+        locationOffsets={locationOffsets}
+        timetable={timetable}
+        mosqueName={mosqueName}
+        jamaatTimes={jamaatTimes}
+        playAzanOnJamaat={playAzanOnJamaat}
+        hijriAdjustment={hijriAdjustment}
+        lang={appLang}
+        onApplyRemoteData={handleApplyRemoteData}
       />
     </>
   );

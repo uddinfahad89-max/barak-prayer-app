@@ -139,10 +139,10 @@ export const DataEditorModal: React.FC<DataEditorModalProps> = ({
           <button
             id="apply-json-btn"
             onClick={handleApply}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-sm transition-colors cursor-pointer"
           >
             <Save className="w-3.5 h-3.5" />
-            Apply Changes
+            Apply & Save to Cloud
           </button>
         </div>
       </div>

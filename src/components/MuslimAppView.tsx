@@ -26,6 +26,7 @@ import {
   Plus,
   KeyRound,
   X,
+  Cloud,
 } from 'lucide-react';
 import { QiblaModal } from './QiblaModal';
 import { TasbihModal } from './TasbihModal';
@@ -74,6 +75,7 @@ interface MuslimAppViewProps {
   onOpenLocationPicker?: () => void;
   currentUser?: UserAccount | null;
   onOpenAuth?: (mode?: AuthMode) => void;
+  onOpenFirebaseSync?: () => void;
 }
 
 export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
@@ -102,6 +104,7 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
   onOpenLocationPicker,
   currentUser,
   onOpenAuth,
+  onOpenFirebaseSync,
 }) => {
   // Signup banner dismissal state
   const [dismissSignupBanner, setDismissSignupBanner] = useState<boolean>(false);
@@ -393,6 +396,18 @@ export const MuslimAppView: React.FC<MuslimAppViewProps> = ({
                   </div>
                   <span className="text-xs sm:text-sm font-bold text-white">{coins}</span>
                 </button>
+
+                {/* Firebase Cloud Sync Button */}
+                {onOpenFirebaseSync && (
+                  <button
+                    id="muslim-view-cloud-sync-btn"
+                    onClick={onOpenFirebaseSync}
+                    className="p-1.5 text-amber-300 hover:text-amber-200 hover:bg-emerald-800/40 rounded-full transition-colors"
+                    title={lang === 'bn' ? 'ফায়ারবেস ক্লাউড ডাটা সিঙ্ক' : 'Firebase Cloud Sync'}
+                  >
+                    <Cloud className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                  </button>
+                )}
 
                 {/* Notifications Bell */}
                 <button

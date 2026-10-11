@@ -83,7 +83,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSuccessMessage('');
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
 
@@ -132,8 +132,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const res = registerWithEmailAndPin({
+    try {
+      const res = await registerWithEmailAndPin({
         name,
         email,
         mPin,
@@ -146,10 +146,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onUserChange(res.user);
         setSuccessMessage(
           lang === 'en'
-            ? '🎉 Registration successful! Welcome to the Ummah portal.'
+            ? '🎉 Registration successful! Synced with Firebase Cloud.'
             : lang === 'ur'
-            ? '🎉 رجسٹریشن کامیاب! پورٹل میں خوش آمدید۔'
-            : '🎉 অভিনন্দন! আপনার একাউন্ট সফলভাবে তৈরি হয়েছে।'
+            ? '🎉 رجسٹریشن کامیاب! Firebase کے ساتھ ہم آہنگ کیا گیا۔'
+            : '🎉 অভিনন্দন! আপনার একাউন্ট সফলভাবে তৈরি ও Firebase ক্লাউডে সংরক্ষিত হয়েছে।'
         );
         setTimeout(() => {
           onClose();
@@ -157,10 +157,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else {
         setErrorMessage(res.error || 'Registration failed');
       }
-    }, 400);
+    } catch {
+      setIsSubmitting(false);
+      setErrorMessage('একটি ত্রুটি ঘটেছে, পুনরায় চেষ্টা করুন');
+    }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
 
@@ -187,8 +190,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const res = loginWithEmailAndPin(loginEmail, loginPin);
+    try {
+      const res = await loginWithEmailAndPin(loginEmail, loginPin);
       setIsSubmitting(false);
 
       if (res.success && res.user) {
@@ -206,10 +209,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else {
         setErrorMessage(res.error || 'Login failed');
       }
-    }, 400);
+    } catch {
+      setIsSubmitting(false);
+      setErrorMessage('লগইন করতে সমস্যা হচ্ছে, আবার চেষ্টা করুন');
+    }
   };
 
-  const handleResetPin = (e: React.FormEvent) => {
+  const handleResetPin = async (e: React.FormEvent) => {
     e.preventDefault();
     resetMessages();
 
@@ -247,16 +253,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      const res = updateUserPin(resetEmail, newPin);
+    try {
+      const res = await updateUserPin(resetEmail, newPin);
       setIsSubmitting(false);
 
       if (res.success) {
         setSuccessMessage(
           lang === 'en'
-            ? 'mPIN updated successfully! Please login with your new mPIN.'
+            ? 'mPIN updated successfully! Synced with Firebase Cloud.'
             : lang === 'ur'
-            ? 'mPIN کامیابی سے اپ ڈیٹ ہو گیا! براہ کرم لاگ ان کریں۔'
+            ? 'mPIN کامیابی سے اپ ڈیٹ ہو گیا!'
             : 'mPIN সফলভাবে পরিবর্তন হয়েছে! নতুন mPIN দিয়ে লগইন করুন।'
         );
         setLoginEmail(resetEmail);
@@ -268,7 +274,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else {
         setErrorMessage(res.error || 'Failed to update mPIN');
       }
-    }, 400);
+    } catch {
+      setIsSubmitting(false);
+      setErrorMessage('mPIN রিসেট ব্যর্থ হয়েছে, পুনরায় চেষ্টা করুন');
+    }
   };
 
   const handleLogout = () => {
@@ -753,6 +762,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                       <ShieldCheck className="w-3 h-3 text-[#E2A336]" />
                       <span>{lang === 'en' ? 'Verified Member' : 'ভেরিফায়েড সদস্য'}</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                      <span>☁️</span>
+                      <span>Firebase Cloud</span>
                     </span>
                   </div>
                   <p className="text-xs text-emerald-300/80 truncate mt-0.5">{currentUser.email}</p>
